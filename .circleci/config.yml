@@ -14,7 +14,6 @@ jobs:
       - checkout
       - run: lein cljfmt check
 
-# See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
   test-lint:
     jobs:
