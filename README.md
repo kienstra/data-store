@@ -1,6 +1,6 @@
 # Data Store
 
-A lightweight in-memory data store.
+A lightweight in-memory data store in [Clojure](https://clojure.org/).
 
 ### Bugs
 
