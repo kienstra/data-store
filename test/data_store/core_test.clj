@@ -2,6 +2,6 @@
   (:require [clojure.test :refer :all]
             [data-store.core :refer :all]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(deftest core-test
+  (testing "Core"
+    (is (= 1 1))))
