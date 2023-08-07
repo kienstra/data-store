@@ -5,7 +5,7 @@
 Proposed
 
 ## Context
-What programming language should this data store be in? It should have good support for network programming and Test-Driven Development.
+What programming language should this data store be in? It should have good support for network programming and Test Driven Development.
 
 ## Decision
 This project will be in [Clojure](https://clojure.org/).
@@ -15,3 +15,8 @@ This project will be in [Clojure](https://clojure.org/).
 2. There are good server libraries, like [httpkit.server](https://http-kit.github.io/http-kit/org.httpkit.server.html) and [compojure](http://weavejester.github.io/compojure/compojure.core.html).
 3. There's a good [testing library](https://clojure.github.io/clojure/clojure.test-api.html) and [server mocking library](https://github.com/ring-clojure/ring-mock).
 4. Clojure is mainly immutable, but you can set [atoms](https://clojure.org/reference/atoms) to persist data in the data store.
+5. Long-term support is good. Clojure is [16 years old](https://en.wikipedia.org/wiki/Clojure), and will probably be supported for a long time.
+6. You don't have to keep up with new releases much. The Clojure language last released a new version [over a year ago](https://clojure.org/releases/downloads). There will be little need to keep up with language and library releases.
+7. Requires less development time. Clojure is terse, and has mainly pure function. This promotes fast, Test Driven Development.
+8. Hosting cost should be the same as other languages. You can package a Clojure app [as a JAR file](https://www.braveclojure.com/java/), so hosting could be the same as for a Java app.
+9. Ability to hire is not as good as other languages. There are fewer Clojure developers than other languages, so we'd probably have to train developers on Clojure.
