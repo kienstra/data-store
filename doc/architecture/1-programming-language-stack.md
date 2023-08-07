@@ -1,5 +1,5 @@
-# ADR: Programming Language/Stack
-2023-08-06
+# 1. Programming Language/Stack
+Date: 2023-08-06
 
 ## Status
 Proposed
