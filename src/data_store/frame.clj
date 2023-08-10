@@ -3,7 +3,7 @@
 
 (defn buffer->bytes [b i]
   (if (Character/isDigit (get b i))
-     (recur b (+ i 1))
+    (recur b (+ i 1))
     (Integer/parseInt (subs b 0 i))))
 
 (defn buffer->frame [b]
