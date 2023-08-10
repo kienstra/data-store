@@ -21,6 +21,5 @@
       (let [bytes (buffer->count (subs b 1) 0)]
         (subs b (+ 3 (count (str bytes))) (+ 4 bytes)))
       (= first-char "*")
-      (let [number-elements (buffer->count (subs b 1) 0)
-            contents (subs b (+ 1 (count (str number-elements))))]
-        (map buffer->frame (re-seq #"\$\d+\r\n\w+\r\n" (subs contents (+ 1 (count (str number-elements))))))))))
+      (let [number-elements (buffer->count (subs b 1) 0)]
+        (map buffer->frame (re-seq #"\$\d+\r\n\w+\r\n|[^\$][^\r\n]+\r\n" (subs (subs b (+ 1 (count (str number-elements)))) (+ 1 (count (str number-elements))))))))))
