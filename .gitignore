@@ -8,6 +8,7 @@ pom.xml.asc
 *.class
 /.clj-kondo
 /.lein-*
+/.lsp
 /.nrepl-port
 /.prepl-port
 .hgignore
