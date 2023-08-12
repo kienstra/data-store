@@ -1,10 +1,13 @@
 (defproject data-store "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
+  :description "An in-memory data store"
   :url "http://example.com/FIXME"
-  :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
-            :url "https://www.eclipse.org/legal/epl-2.0/"}
-  :dependencies [[org.clojure/clojure "1.11.1"]]
-  :plugins [[lein-cljfmt "0.9.2"]]
+  :license {:name "GPL-2.0-or-later"
+            :url "https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt"}
+  :dependencies [[org.clojure/clojure "1.11.1"]
+                 [org.clojure/core.async "1.6.673"]
+                 [http-kit "2.6.0"]
+                 [ring "1.10.0" :exclusions [ring/ring-core]]
+                 [ring/ring-mock "0.3.2"]]  :plugins [[lein-cljfmt "0.9.2"]]
   :main ^:skip-aot data-store.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all

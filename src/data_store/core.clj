@@ -1,7 +1,6 @@
 (ns data-store.core
-  (:gen-class))
+  (:require [data-store.server :refer [serve]]
+            [data-store.handler :refer [handler]]))
 
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))
+(defn -main []
+  (serve 6379 handler))
