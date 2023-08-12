@@ -7,8 +7,7 @@
                  [org.clojure/core.async "1.6.673"]
                  [http-kit "2.6.0"]
                  [ring "1.10.0" :exclusions [ring/ring-core]]
-                 [ring/ring-mock "0.3.2"]]
-  :plugins [[lein-cljfmt "0.9.2"]]
+                 [ring/ring-mock "0.3.2"]]  :plugins [[lein-cljfmt "0.9.2"]]
   :main ^:skip-aot data-store.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
