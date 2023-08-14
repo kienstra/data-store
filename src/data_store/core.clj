@@ -1,7 +1,6 @@
 (ns data-store.core
-  "Functions for creating a threaded TCP server."
   (:require [clojure.java.io :as io])
-  (:import [java.net InetAddress ServerSocket Socket SocketException]))
+  (:import [java.net InetAddress ServerSocket SocketException]))
 
 (defn- server-socket [server]
   (ServerSocket.
@@ -34,8 +33,7 @@
   (let [conn (.accept @socket)]
     (swap! connections conj conn)
     (future
-      (try (handler conn)
-           (finally (close-socket server conn))))))
+      (handler conn))))
 
 (defn running?
   [server]
@@ -64,8 +62,6 @@
       (handler input output))))
 
 (defn wrap-io
-  "Wrap a handler so that it expects a Reader and Writer as arguments, rather
-    than a raw Socket."
   [handler]
   (wrap-streams
    (fn [input output]
@@ -74,8 +70,9 @@
        (while (.ready reader)
          (handler (.readLine reader) writer))))))
 
-(defn handler [reader writer]
-  (.append writer ":12"))
+(defn handler [input writer]
+  (println input)
+  (.append writer "+PONG"))
 
 (def server
   (tcp-server
