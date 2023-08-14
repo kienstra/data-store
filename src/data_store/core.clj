@@ -12,19 +12,21 @@
    msg
     (do
       (.write writer "*1")
-      (.write writer msg)
-      (.flush writer))
+      (.write writer msg))
     nil))
 
 (defn serve [port handler]
-  (with-open [server-sock (ServerSocket. port)
-              sock (.accept server-sock)
-              reader (io/reader sock)
-              writer (io/writer sock)]
-    (while (.ready reader)
-      (let [msg-in (receive reader)
-            msg-out (handler msg-in)]
-        (send-to-socket writer msg-out)))))
+  (let [running (atom true)]
+    (future
+      (with-open [server-sock (ServerSocket. port)
+                  sock (.accept server-sock)
+                  reader (io/reader sock)
+                  writer (io/writer sock)]
+        (while (.ready reader)
+          (let [msg-in (receive reader)
+                msg-out (handler msg-in)]
+            (send-to-socket writer msg-out)))))
+    running))
 
 (defn handler [input]
   (println input)
