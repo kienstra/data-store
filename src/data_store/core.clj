@@ -41,12 +41,7 @@
     (not (.isClosed socket))))
 
 (defn start [server]
-  (open-server-socket server)
-  (future
-    (while (running? server)
-      (try
-        (accept-connection server)
-        (catch SocketException _)))))
+  (server-socket server))
 
 (defn stop
   [server]
@@ -72,7 +67,12 @@
 
 (defn handler [input writer]
   (println input)
-  (.append writer "+PONG"))
+  (if (= input "PING")
+    (do
+      (.write writer "A")
+      (.write writer "PONG")
+      (.flush writer))
+    nil))
 
 (def server
   (tcp-server
