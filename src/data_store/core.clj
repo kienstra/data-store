@@ -3,7 +3,7 @@
   (:import [java.net ServerSocket]))
 
 (defn send-to-socket [writer msg]
-  (.write writer (str "*1" msg)))
+  (.write writer msg))
 
 (defn serve [port handler]
  (with-open
@@ -17,9 +17,8 @@
             (send-to-socket writer msg-out)))))
 
 (defn handler [input]
-  (println input)
-  (if (= input "PING")
-    "PONG"
+  (if (.contains input "PING")
+    "$4\r\nPONG\r\n"
     ""))
 
 (defn -main []
