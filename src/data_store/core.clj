@@ -13,9 +13,7 @@
     reader (io/reader sock)
     writer (io/writer sock)]
     (while (.ready reader)
-      (let [msg-in (.readLine reader)
-            msg-out (handler msg-in)]
-        (send-to-socket writer msg-out)))))
+      (send-to-socket writer (handler (.readLine reader))))))
 
 (defn -main []
   (serve 6379))
