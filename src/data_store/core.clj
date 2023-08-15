@@ -4,19 +4,19 @@
             [data-store.handler :refer [handler]])
   (:import [java.net ServerSocket]))
 
-(defn send-to-socket [writer msg]
-  (.write writer msg))
-
 (defn serve [port]
   (let [running (atom true)]
     (future
       (with-open [server-sock (ServerSocket. port)]
         (while @running
-          (with-open [sock (.accept server-sock)
-                      reader (io/reader sock)
-                      writer (io/writer sock)]
-            (while (.ready reader)
-              (send-to-socket writer (handler (.readLine reader))))))))
+          (let [sock (.accept server-sock)
+                      reader (io/reader sock)]
+            (doseq [line (line-seq reader)]
+              (.write (io/writer (.accept server-sock)) line))))))
+              ; Push (.readLine reader) onto data type for input array
+              ; i in n
+              ; once i is more than n, the array is complete
+              ; (send-to-socket processed-input)
     running))
 
 (defn -main []
