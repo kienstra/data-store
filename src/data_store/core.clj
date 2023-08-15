@@ -1,11 +1,7 @@
 (ns data-store.core
   (:require [clojure.java.io :as io]
-            [clojure.string :refer [join]]
             [data-store.handler :refer [handler]])
   (:import [java.net ServerSocket]))
-
-(defn send-to-socket [writer msg]
-  (.write writer msg))
 
 (defn serve [port]
   (let [running (atom true)]
@@ -15,8 +11,10 @@
           (with-open [sock (.accept server-sock)
                       reader (io/reader sock)
                       writer (io/writer sock)]
-            (while (.ready reader)
-              (send-to-socket writer (handler (.readLine reader))))))))
+            (.write writer (handler (loop [acc [] r reader]
+                                      (if (.ready r)
+                                        (recur (conj acc (.readLine r)) r)
+                                        acc))))))))
     running))
 
 (defn -main []
