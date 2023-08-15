@@ -5,7 +5,7 @@
     (cond
       (= command "PING")
       "$4\r\nPONG\r\n"
-      (and (= command "ECHO") (nth input 4))
+      (and (= command "ECHO") (nth input 4 false))
       (str (nth input 3) "\r\n" (nth input 4) "\r\n")
       :else "$-1\r\n")
     "-Error no command \r\n"))
