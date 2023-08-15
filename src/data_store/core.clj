@@ -7,13 +7,16 @@
   (.write writer msg))
 
 (defn serve [port]
-  (with-open
-   [server-sock (ServerSocket. port)
-    sock (.accept server-sock)
-    reader (io/reader sock)
-    writer (io/writer sock)]
-    (while (.ready reader)
-      (send-to-socket writer (handler (.readLine reader))))))
+  (let [running (atom true)]
+    (future
+      (with-open [server-sock (ServerSocket. port)]
+        (while @running
+          (with-open [sock (.accept server-sock)
+                      reader (io/reader sock)
+                      writer (io/writer sock)]
+            (while (.ready reader)
+              (send-to-socket writer (handler (.readLine reader))))))))
+    running))
 
 (defn -main []
   (serve 6379))
