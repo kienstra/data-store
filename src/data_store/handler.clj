@@ -1,8 +1,7 @@
 (ns data-store.handler)
 
 (defn handler [input]
-  (println input)
-  (if-let [command (nth input 2)]
+  (if-let [command (nth input 2 false)]
     (cond
       (= command "PING")
       "$4\r\nPONG\r\n"

@@ -4,7 +4,8 @@
 
 (deftest handler-test
   (testing "Handler"
-    (is (= nil (handler "NONEXISTENT")))
-    (is (= nil (handler "NONEXISTENT FOO")))
-    (is (= "PONG" (handler "PING")))
-    (is (= "Hello World" (handler "ECHO Hello World")))))
+    (is (= "-Error no command \r\n" (handler [])))
+    (is (= "$4\r\nPONG\r\n" (handler ["*1" "$4" "PING"])))
+    (is (= "$11\r\nHello World\r\n" (handler ["*2" "$4" "ECHO" "$11" "Hello World"])))
+    (is (= "$6\r\nSimple\r\n" (handler ["*2" "$4" "ECHO" "$6" "Simple"])))
+    (is (= "$22\r\nSeveral Words Together\r\n" (handler ["*2" "$4" "ECHO" "$22" "Several Words Together"])))))
