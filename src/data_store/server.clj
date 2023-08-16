@@ -8,7 +8,7 @@
 (defn serve [handler port]
   (with-open [server-sock (ServerSocket. port)]
     (while @running
-      (loop [state []]
+      (loop [store {}]
         (let [sock (.accept server-sock)
               reader (io/reader sock)
               writer (io/writer sock)
@@ -16,9 +16,10 @@
                            r reader]
                       (if (.ready r)
                         (recur (conj acc (.readLine r)) r)
-                        acc))]
-          (.write writer (handler input))
+                        acc))
+              [new-store output] (handler store input)]
+          (.write writer output)
           (.close writer)
           (.close reader)
-          (println state)
-          (recur (conj state 1)))))))
+          (println new-store)
+          (recur new-store))))))
