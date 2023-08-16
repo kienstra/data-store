@@ -11,13 +11,13 @@
       (loop [state []]
         (let [sock (.accept server-sock)
               reader (io/reader sock)
-              writer (io/writer sock)]
-          (.write writer (handler
-                          (loop [acc []
-                                 r reader]
-                            (if (.ready r)
-                              (recur (conj acc (.readLine r)) r)
-                              acc))))
+              writer (io/writer sock)
+              input (loop [acc []
+                           r reader]
+                      (if (.ready r)
+                        (recur (conj acc (.readLine r)) r)
+                        acc))]
+          (.write writer (handler input))
           (.close writer)
           (.close reader)
           (println state)
