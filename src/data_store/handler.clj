@@ -1,8 +1,10 @@
 (ns data-store.handler)
 
 (defn handler [store input]
-  (if-let [command (nth input 2 false)]
+  (let [command (nth input 2 nil)]
     (cond
+      (nil? command)
+      [store "-Error no command \r\n"]
       (= command "PING")
       [store "$4\r\nPONG\r\n"]
       (= command "ECHO")
@@ -21,5 +23,4 @@
                  "-Error key not found\r\n"
                  (str "$" (count (get store (nth input 4))) "\r\n" (get store (nth input 4)) "\r\n"))]
         [store "-Error nothing to get\r\n"])
-      :else [store "-Error invalid command\r\n"])
-    [store "-Error no command \r\n"]))
+      :else [store "-Error invalid command\r\n"])))
