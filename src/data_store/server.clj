@@ -11,19 +11,14 @@
       (loop [store {}]
         (let [sock (.accept server-sock)
               reader (io/reader sock)
-              writer (io/writer sock)]
-          (loop [r reader]
-            (if (.ready r)
-              (let [input (.readLine r)]
-                (println input)
-                (when
-                 (= input "PING")
-                  (.write writer "$4\r\nPONG\r\n"))
-                (when
-                 (= input "DOCS")
-                  (.write writer "*2\r\n$4\r\nsave\r\n*2\r\n$3\r\nfoo\r\n$2\r\nbar\r\n"))
-                (recur r))
-              (do
-                (.close writer)
-                (.close reader))))
-          (recur {}))))))
+              writer (io/writer sock)
+              input (loop [acc []
+                           r reader]
+                      (if (.ready r)
+                        (recur (conj acc (.readLine r)) r)
+                        acc))
+              [new-store output] (handler store input)]
+          (.write writer output)
+          (.close writer)
+          (.close reader)
+          (recur new-store))))))
