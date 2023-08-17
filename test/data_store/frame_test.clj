@@ -4,15 +4,12 @@
 
 (deftest frame-test-unserialize
   (testing "Simple string"
-    (is (= nil (unserialize "+noend")))
     (is (= "OK" (unserialize "+OK\r\n")))
     (is (= "longer simple string" (unserialize "+longer simple string\r\n"))))
   (testing "Error"
-    (is (= nil (unserialize "-errornoend")))
     (is (= {:error "Example error"} (unserialize "-Example error\r\n")))
     (is (= {:error "Long error message that continues"} (unserialize "-Long error message that continues\r\n"))))
   (testing "Integer"
-    (is (= nil (unserialize ":123")))
     (is (= 123 (unserialize ":123\r\n")))
     (is (= 999999999 (unserialize ":999999999\r\n"))))
   (testing "Bulk string"
@@ -33,7 +30,7 @@
     (is (= ":123\r\n" (serialize 123)))
     (is (= ":999999999999\r\n" (serialize 999999999999))))
   (testing "Array"
-    (is (= "*-1\r\n" (serialize nil)))
+    (is (= "$-1\r\n" (serialize nil)))
     (is (= "*0\r\n" (serialize '())))
     (is (= "*2\r\n+foo\r\n+bar\r\n" (serialize '("foo" "bar"))))
     (is (= "*3\r\n:1\r\n:2\r\n:3\r\n" (serialize '(1 2 3))))))

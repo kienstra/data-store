@@ -3,11 +3,12 @@
 
 (defn buffer->count [b i]
   (if (Character/isDigit (get b i))
-    (recur b (+ i 1))
+    (recur b (inc i))
     (Integer/parseInt (subs b 0 i))))
 
 (def delim "\r\n")
 (defn unserialize [b]
+  (println b)
   (let [first-char (subs b 0 1)
         delim-index (.indexOf b delim)]
     (cond
@@ -33,10 +34,10 @@
     (number? x)
     (str ":" x delim)
     (= x nil)
-    "*-1\r\n"
+    (str "$-1" delim)
     (seq? x)
     (let [length (count x)]
       (str "*" length delim (join (map serialize x))))
     (= x '())
-    "*0\r\n"
+    (str "*0" delim)
     :else x))

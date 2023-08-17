@@ -1,7 +1,10 @@
 (ns data-store.handler
   (:require [data-store.frame :refer [serialize unserialize]]))
 
+(def delim "\r\n")
+
 (defn handler [store input]
+  (println input)
   (let [command (nth input 2 nil)]
     (cond
       (nil? command)
@@ -15,7 +18,7 @@
       (= command "SET")
       (if
        (nth input 6 false)
-        [(into store {(nth input 4) (unserialize (nth input 6))}) "+OK\r\n"]
+        [(into store {(nth input 4) (unserialize (str (nth input 5) delim (nth input 6) delim))}) "+OK\r\n"]
         [store "-Error nothing to set\r\n"])
       (= command "GET")
       (if

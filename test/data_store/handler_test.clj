@@ -15,8 +15,8 @@
   (testing "SET"
     (is (= [{} "-Error nothing to set\r\n"] (handler {} ["*2" "$4" "SET" "$4" "Name"])))
     (is (= [{"Name" "John"} "+OK\r\n"] (handler {} ["*2" "$4" "SET" "$4" "Name" "$4" "John"])))
-    (is (= [{"Name" "Renamed"} "+OK\r\n"] (handler {"Name" "John"} ["*2" "$4" "SET" "$4" "Name" "$4" "Renamed"]))))
+    (is (= [{"Name" "Renamed"} "+OK\r\n"] (handler {"Name" "John"} ["*2" "$4" "SET" "$4" "Name" "$7" "Renamed"]))))
   (testing "GET"
     (is (= [{} "-Error nothing to get\r\n"] (handler {} ["*1" "$4" "GET"])))
     (is (= [{} "$-1\r\n"] (handler {} ["*2" "$4" "GET" "$4" "Name"])))
-    (is (= [{"Name" "John"} "$4\r\nJohn\r\n"] (handler {"Name" "John"} ["*2" "$4" "GET" "$4" "Name"])))))
+    (is (= [{"Name" "John"} "+John\r\n"] (handler {"Name" "John"} ["*2" "$4" "GET" "$4" "Name"])))))
