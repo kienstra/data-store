@@ -21,5 +21,4 @@
           (.write writer output)
           (.close writer)
           (.close reader)
-          (println new-store)
           (recur new-store))))))
