@@ -11,14 +11,14 @@
   (let [first-char (subs b 0 1)
         delim-index (.indexOf b delim)]
     (cond
-      (or (= delim-index -1) (= b "$-1\r\n") (= b "*-1\r\n"))
+      (or (= b "$-1\r\n") (= b "*-1\r\n"))
       nil
       (= first-char "+")
       (subs b 1 delim-index)
       (= first-char "-")
       {:error (subs b 1 delim-index)}
       (= first-char ":")
-      (Integer/parseInt (subs b 1 delim-index))
+      (Integer/parseInt (subs b 1 (if (= delim-index -1) (count b) delim-index)))
       (= first-char "$")
       (let [bytes (buffer->count (subs b 1) 0)]
         (subs b (+ 3 (count (str bytes))) (+ 4 bytes)))

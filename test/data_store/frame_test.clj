@@ -32,8 +32,8 @@
   (testing "Integer"
     (is (= ":123\r\n" (serialize 123)))
     (is (= ":999999999999\r\n" (serialize 999999999999))))
-    (testing "Array"
-      (is (= "*-1\r\n" (serialize nil)))
-      (is (= "*0\r\n" (serialize '())))
-      (is (= "*2\r\n+foo\r\n+bar\r\n" (serialize '("foo" "bar"))))
-      (is (= "*3\r\n:1\r\n:2\r\n:3\r\n" (serialize '(1 2 3))))))
+  (testing "Array"
+    (is (= "*-1\r\n" (serialize nil)))
+    (is (= "*0\r\n" (serialize '())))
+    (is (= "*2\r\n+foo\r\n+bar\r\n" (serialize '("foo" "bar"))))
+    (is (= "*3\r\n:1\r\n:2\r\n:3\r\n" (serialize '(1 2 3))))))
