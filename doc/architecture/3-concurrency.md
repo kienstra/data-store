@@ -14,6 +14,7 @@ This will use Clojure's native [core.async](https://clojure.github.io/core.async
 1. This wil be easy to understand, as it's the most idiomatic way to do asynchrony in Clojure.
 2. It's much more complex than doing nothing. This already supports multiple concurrent clients.
 3. The store will need to be in a [ref](https://clojure.org/reference/refs), which is more complex than the [immutable](https://github.com/kienstra/data-store/blob/f4b57c37d7012db756d4211bdf6d2f5515873d32/src/data_store/server.clj#L11) store.
+4. State won't be immutable anymore. It'll be a lot harder to reason about and debug.
 
 ## Considered and rejected
 1. Doing nothing: this already supports multiple clients. But its concurrent handling is very poor: `redis-benchmark` doesn't run at all with more than `-n 50`.
