@@ -14,10 +14,12 @@
         [store (str "+" (nth input 4) delim)]
         [store "-Error nothing to echo\r\n"])
       (= command "SET")
-      (if
-       (nth input 6 false)
-        [(into store {(nth input 4) (nth input 6)}) "+OK\r\n"]
-        [store "-Error nothing to set\r\n"])
+      (cond
+        (not (nth input 6 nil))
+        [store "-Error nothing to set\r\n"]
+        (not (string? (nth input 6 nil)))
+        [store "-Error not a string\r\n"]
+        :else [(into store {(nth input 4) (nth input 6)}) "+OK\r\n"])
       (= command "GET")
       (cond
         (not (nth input 4 nil))

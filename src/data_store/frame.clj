@@ -8,7 +8,6 @@
 
 (def delim "\r\n")
 (defn unserialize [b]
-  (println b)
   (let [first-char (subs b 0 1)
         delim-index (.indexOf b delim)]
     (cond

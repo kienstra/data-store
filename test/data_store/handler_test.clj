@@ -13,7 +13,8 @@
     (is (= [{} "+Several Words Together\r\n"] (handler {} ["*2" "$4" "ECHO" "$22" "Several Words Together"])))
     (is (= [{} "-Error nothing to echo\r\n"] (handler {} ["*2" "$4" "ECHO"]))))
   (testing "SET"
-    (is (= [{} "-Error nothing to set\r\n"] (handler {} ["*2" "$3" "SET" "$4" "Name"])))
+    (is (= [{} "-Error nothing to set\r\n"] (handler {} ["*1" "$3" "SET"])))
+    (is (= [{} "-Error not a string\r\n"] (handler {} ["*2" "$3" "SET" "$4" "Name" "$4" 9325])))
     (is (= [{"Name" "John"} "+OK\r\n"] (handler {} ["*2" "$3" "SET" "$4" "Name" "$4" "John"])))
     (is (= [{"Name" "Renamed"} "+OK\r\n"] (handler {"Name" "John"} ["*2" "$3" "SET" "$4" "Name" "$7" "Renamed"]))))
   (testing "GET"
