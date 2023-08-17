@@ -5,6 +5,7 @@
 (def running (atom true))
 (defn stop [] (swap! running (fn [_] false)))
 
+(def write-lock (Object.))
 (defn serve [handler port]
   (with-open [server-sock (ServerSocket. port)]
     (while @running
@@ -18,7 +19,7 @@
                         (recur (conj acc (.readLine r)) r)
                         acc))
               [new-store output] (handler store input)]
-          (.write writer output)
+          (locking write-lock (.write writer output))
           (.close writer)
           (.close reader)
           (recur new-store))))))
