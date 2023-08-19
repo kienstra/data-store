@@ -25,15 +25,17 @@
 
 (defn line-out
   [sock handler]
-  (let [out (async/chan)
-        writer (io/writer sock)]
+  (let [out (async/chan)]
     (async/go-loop [store {}]
       (let [msg (async/<! out)
             [new-store out-msg] (handler store msg)]
         (try
-          (.write writer out-msg)
-          (.flush writer)
-          (catch SocketException _ #()))
+          (when out-msg
+           (let [writer (io/writer sock)]
+             (.write writer out-msg)
+             (.write writer "$-1\r\n")
+             (.flush writer)))
+            (catch SocketException _ #()))
         (recur new-store)))
     out))
 
