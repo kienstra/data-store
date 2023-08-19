@@ -1,26 +1,43 @@
 (ns data-store.server
-  "This namespace assumes two things:
-  1. that you have put this code in a directory with the path
-     `CODE-PATH/examples/tcp/echo_server/server.clj`, and
-  2. that you have added `CODE-PATH` to one of your `:source-paths` definitions
-     in your `project.clj` file."
   (:require
    [clojure.core.async :as async]
    [clojure.java.io :as io])
-  (:import (java.net ServerSocket SocketException)))
+  (:import (java.net ServerSocket)))
 
+(defn async-loop
+  [in out]
+  (async/go-loop []
+    (let [msg (async/<! in)]
+      (async/>! out msg)
+      (recur))))
 
-(defn serve [socket]
-  []
-    (with-open [server (ServerSocket. socket)]
-      (while true
-        (loop []
-          (println "recurred in serve function")
-          (let [sock (.accept server)
-                reader (io/reader sock)
-                writer (io/writer sock)
-                _ (.readLine reader)]
-            (.write writer "$4\r\nPONG\r\n")
-            (.close writer)
-            (.close reader))
-          (recur)))))
+(defn line-in
+  [sock]
+  (let [in (async/chan)
+        reader (io/reader sock)]
+    (async/go-loop []
+      (let [msg (.readLine reader)]
+        (async/>! in msg))
+      (recur))
+    in))
+
+(defn line-out
+  [sock handler]
+  (let [out (async/chan)
+        writer (io/writer sock)]
+    (async/go-loop [store {}]
+      (let [msg (async/<! out)
+            [new-store out-msg] (handler store msg)]
+        (.write writer out-msg)
+        (.flush writer)
+        (recur new-store)))
+    out))
+
+(defn serve [sock handler]
+  (with-open [server (ServerSocket. sock)
+        sock (.accept server)]
+    (async/go
+      (async-loop
+       (line-in sock)
+       (line-out sock handler)))
+    (.join (Thread/currentThread))))
