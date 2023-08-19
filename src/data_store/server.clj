@@ -10,6 +10,7 @@
    [org.jboss.netty.buffer ChannelBuffers]))
 
 (declare make-handler)
+(def store (atom {}))
 
 (defn serve
   [port handler]
@@ -26,21 +27,11 @@
 
 (defn make-handler [handler]
   (proxy [SimpleChannelHandler] []
-    (channelConnected [ctx e]
-      (let [c (.getChannel e)]
-        (println "Connected:" c)))
-
-    (channelDisconnected [ctx e]
-      (let [c (.getChannel e)]
-        (println "Disconnected:" c)))
     (messageReceived [ctx e]
       (let [c (.getChannel e)
             cb (.getMessage e)
             msg (.toString cb "UTF-8")]
-        (.write c (ChannelBuffers/copiedBuffer (.getBytes (second (handler {} msg)))))))
-
-    (exceptionCaught
-      [ctx e]
-      (let [throwable (.getCause e)]
-        (println "@exceptionCaught" throwable))
-      (-> e .getChannel .close))))
+        (swap! store (fn [prev-store]
+                       (let [[new-state out] (handler prev-store msg)]
+                         (.write c (ChannelBuffers/copiedBuffer (.getBytes out)))
+                         new-state)))))))
