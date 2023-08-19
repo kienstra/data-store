@@ -1,43 +1,25 @@
 (ns data-store.server
-  (:require
-   [clojure.core.async :as async]
-   [clojure.java.io :as io])
-  (:import (java.net ServerSocket)))
+  (:require [clojure.java.io :as io])
+  (:import [java.net ServerSocket]))
 
-(defn async-loop
-  [in out]
-  (async/go-loop []
-    (let [msg (async/<! in)]
-      (async/>! out msg)
-      (recur))))
+(def running (atom true))
+(defn stop [] (swap! running (fn [_] false)))
 
-(defn line-in
-  [sock]
-  (let [in (async/chan)
-        reader (io/reader sock)]
-    (async/go-loop []
-      (let [msg (.readLine reader)]
-        (async/>! in msg))
-      (recur))
-    in))
-
-(defn line-out
-  [sock handler]
-  (let [out (async/chan)
-        writer (io/writer sock)]
-    (async/go-loop [store {}]
-      (let [msg (async/<! out)
-            [new-store out-msg] (handler store msg)]
-        (.write writer out-msg)
-        (.flush writer)
-        (recur new-store)))
-    out))
-
-(defn serve [sock handler]
-  (let [server (ServerSocket. sock)
-        sock (.accept server)]
-    (async/go
-      (async-loop
-       (line-in sock)
-       (line-out sock handler)))
-    (.join (Thread/currentThread))))
+(def write-lock (Object.))
+(defn serve [handler port]
+  (with-open [server-sock (ServerSocket. port)]
+    (while @running
+      (loop [store {}]
+        (let [sock (.accept server-sock)
+              reader (io/reader sock)
+              writer (io/writer sock)
+              input (loop [acc []
+                           r reader]
+                      (if (.ready r)
+                        (recur (conj acc (.readLine r)) r)
+                        acc))
+              [new-store output] (handler store input)]
+          (locking write-lock (.write writer output))
+          (.close writer)
+          (.close reader)
+          (recur new-store))))))
