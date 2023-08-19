@@ -5,4 +5,4 @@
    [data-store.server :refer [serve]]))
 
 (defn -main []
-  (serve 6379 handler))
+  (serve 6379))
