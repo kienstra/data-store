@@ -4,44 +4,26 @@
    [clojure.java.io :as io])
   (:import (java.net ServerSocket SocketException)))
 
-(defn async-loop
-  [in out]
-  (async/go-loop []
-    (let [msg (async/<! in)]
-      (async/>! out msg)
-      (recur))))
+(defn pmap-file
+  [socket handler]
+  (with-open [rdr (io/reader socket :append true)
+              wtr (io/writer socket :append true)]
+    (let [lines (line-seq rdr)]
+      (dorun
+       (map #(when % (.write wtr %))
+            (pmap handler lines))
+       (.flush wtr)))))
 
-(defn line-in
-  [sock]
-  (let [in (async/chan)
-        reader (io/reader sock)]
-    (async/go-loop []
-      (when (.ready reader)
-        (let [msg (.readLine reader)]
-          (when msg
-            (async/>! in msg))
-          (recur))))
-    in))
+;; Example of calling this
+(def accumulator (atom 0))
 
-(defn line-out
-  [sock handler]
-  (let [out (async/chan)
-        writer (io/writer sock)]
-    (async/go-loop [store {}]
-      (let [msg (async/<! out)
-            [new-store out-msg] (handler store msg)]
-        (try
-          (.write writer out-msg)
-          (.flush writer)
-          (catch SocketException _ #()))
-        (recur new-store)))
-    out))
+(defn- example-row-fn
+  "Trivial example"
+  [row-string]
+  (str row-string "," (swap! accumulator inc) "\n"))
 
-(defn serve [sock handler]
-  (with-open [server (ServerSocket. sock)]
-    (while true
-      (let [sock (.accept server)]
-        (async/go
-          (async-loop
-           (line-in sock)
-           (line-out sock handler)))))))
+(defn serve [port handler]
+  (with-open [server (ServerSocket. port)]
+   (while true
+      (let [socket (.accept server)]
+        (pmap-file socket handler)))))
