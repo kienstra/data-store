@@ -1,47 +1,46 @@
+; Props Artem Yankov for most of this file
+; https://github.com/yankov/memobot/blob/9498f02d1f32c3133c67581f31e959557e05048f/src/memobot/core.clj
 (ns data-store.server
-  (:require
-   [clojure.core.async :as async]
-   [clojure.java.io :as io])
-  (:import (java.net ServerSocket SocketException)))
+  (:import
+   [java.net InetSocketAddress]
+   [java.util.concurrent Executors]
+   [org.jboss.netty.bootstrap ServerBootstrap]
+   [org.jboss.netty.channel SimpleChannelHandler]
+   [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
+   [org.jboss.netty.buffer ChannelBuffers]))
 
-(defn async-loop
-  [in out]
-  (async/go-loop []
-    (let [msg (async/<! in)]
-      (async/>! out msg)
-      (recur))))
+(declare make-handler)
 
-(defn line-in
-  [sock]
-  (let [in (async/chan)
-        reader (io/reader sock)]
-    (async/go-loop []
-      (when (.ready reader)
-        (let [msg (.readLine reader)]
-          (when msg
-            (async/>! in msg))
-          (recur))))
-    in))
+(defn serve
+  [port handler]
+  (let [channel-factory (NioServerSocketChannelFactory.
+                         (Executors/newCachedThreadPool)
+                         (Executors/newCachedThreadPool))
+        bootstrap (ServerBootstrap. channel-factory)
+        pipeline (.getPipeline bootstrap)]
+    (.addLast pipeline "handler" (make-handler handler))
+    (.setOption bootstrap "child.tcpNoDelay", true)
+    (.setOption bootstrap "child.keepAlive", true)
+    (.bind bootstrap (InetSocketAddress. port))
+    pipeline))
 
-(defn line-out
-  [sock handler]
-  (let [out (async/chan)
-        writer (io/writer sock)]
-    (async/go-loop [store {}]
-      (let [msg (async/<! out)
-            [new-store out-msg] (handler store msg)]
-        (try
-          (.write writer out-msg)
-          (.flush writer)
-          (catch SocketException _ #()))
-        (recur new-store)))
-    out))
+(defn make-handler [handler]
+  (proxy [SimpleChannelHandler] []
+    (channelConnected [ctx e]
+      (let [c (.getChannel e)]
+        (println "Connected:" c)))
 
-(defn serve [sock handler]
-  (with-open [server (ServerSocket. sock)]
-    (while true
-      (let [sock (.accept server)]
-        (async/go
-          (async-loop
-           (line-in sock)
-           (line-out sock handler)))))))
+    (channelDisconnected [ctx e]
+      (let [c (.getChannel e)]
+        (println "Disconnected:" c)))
+    (messageReceived [ctx e]
+      (let [c (.getChannel e)
+            cb (.getMessage e)
+            msg (.toString cb "UTF-8")]
+        (.write c (ChannelBuffers/copiedBuffer (.getBytes (second (handler {} msg)))))))
+
+    (exceptionCaught
+      [ctx e]
+      (let [throwable (.getCause e)]
+        (println "@exceptionCaught" throwable))
+      (-> e .getChannel .close))))

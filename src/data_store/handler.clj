@@ -1,32 +1,35 @@
 (ns data-store.handler
-  (:require [data-store.frame :refer [serialize unserialize]]))
+  (:require [data-store.frame :refer [serialize unserialize]]
+            [clojure.string :refer [split]]))
 
 (def delim "\r\n")
 (defn handler [store input]
-  (let [command (first input)]
+  (let [parsed (split input #"\r\n")
+        command (nth parsed 2)]
+    (println "the input is" parsed)
     (cond
       (nil? command)
       [store "-Error no command \r\n"]
       (= command "PING")
       [store "$4\r\nPONG\r\n"]
       (= command "ECHO")
-      (if (nth input 4 false)
-        [store (str "+" (nth input 4) delim)]
+      (if (nth parsed 4 false)
+        [store (str "+" (nth parsed 4) delim)]
         [store "-Error nothing to echo\r\n"])
       (= command "SET")
       (cond
-        (not (nth input 6 nil))
+        (not (nth parsed 6 nil))
         [store "-Error nothing to set\r\n"]
-        (not (string? (nth input 6 nil)))
+        (not (string? (nth parsed 6 nil)))
         [store "-Error not a string\r\n"]
-        :else [(into store {(nth input 4) (nth input 6)}) "+OK\r\n"])
+        :else [(into store {(nth parsed 4) (nth parsed 6)}) "+OK\r\n"])
       (= command "GET")
       (cond
-        (not (nth input 4 nil))
+        (not (nth parsed 4 nil))
         [store "-Error nothing to get\r\n"]
-        (not (contains? store (nth input 4)))
+        (not (contains? store (nth parsed 4)))
         [store "$-1\r\n"]
-        (not (string? (get store (nth input 4 nil))))
+        (not (string? (get store (nth parsed 4 nil))))
         [store "-Error not a string\r\n"]
-        :else [store (str "+" (get store (nth input 4)) delim)])
+        :else [store (str "+" (get store (nth parsed 4)) delim)])
       :else [store "-Error invalid command\r\n"])))
