@@ -34,7 +34,7 @@
     out))
 
 (defn serve [sock handler]
-  (with-open [server (ServerSocket. sock)
+  (let [server (ServerSocket. sock)
         sock (.accept server)]
     (async/go
       (async-loop
