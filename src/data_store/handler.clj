@@ -3,8 +3,6 @@
 
 (def delim "\r\n")
 (defn handler [store input]
-  (println "top of handler")
-  (println input)
   (let [command (first input)]
     (cond
       (nil? command)

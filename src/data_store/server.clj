@@ -2,7 +2,7 @@
   (:require
    [clojure.core.async :as async]
    [clojure.java.io :as io])
-  (:import (java.net ServerSocket)))
+  (:import (java.net ServerSocket SocketException)))
 
 (defn async-loop
   [in out]
@@ -16,9 +16,11 @@
   (let [in (async/chan)
         reader (io/reader sock)]
     (async/go-loop []
-      (let [msg (.readLine reader)]
-        (async/>! in msg))
-      (recur))
+      (when (.ready reader)
+        (let [msg (.readLine reader)]
+          (when msg
+            (async/>! in msg))
+          (recur))))
     in))
 
 (defn line-out
@@ -28,8 +30,10 @@
     (async/go-loop [store {}]
       (let [msg (async/<! out)
             [new-store out-msg] (handler store msg)]
-        (.write writer out-msg)
-        (.flush writer)
+        (try
+          (.write writer out-msg)
+          (.flush writer)
+          (catch SocketException _ #()))
         (recur new-store)))
     out))
 
