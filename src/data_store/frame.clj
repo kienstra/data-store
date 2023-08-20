@@ -37,6 +37,4 @@
     (seq? x)
     (let [length (count x)]
       (str "*" length delim (join (map serialize x))))
-    (= x '())
-    (str "*0" delim)
-    :else x))
+    :else {:error "Could not serialize"}))
