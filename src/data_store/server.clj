@@ -32,6 +32,9 @@
             cb (.getMessage e)
             msg (.toString cb "UTF-8")]
         (swap! store (fn [prev-store]
-                       (let [[new-state out] (handler prev-store msg)]
+                       (let [[new-store out] (handler prev-store msg)]
                          (.write c (ChannelBuffers/copiedBuffer (.getBytes out)))
-                         new-state)))))))
+                         new-store)))))
+    (exceptionCaught
+     [ctx e]
+     (-> e .getChannel .close))))

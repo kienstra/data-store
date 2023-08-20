@@ -6,7 +6,6 @@
 (defn handler [store input]
   (let [parsed (split input #"\r\n")
         command (nth parsed 2)]
-    (println "the input is" parsed)
     (cond
       (nil? command)
       [store "-Error no command \r\n"]
