@@ -15,4 +15,5 @@
     (is (= {"Name" {:val "John" :exp 19} "Another" {:val "John" :exp 10}} (has-exp {"Name" {:val "John" :exp 19} "Another" {:val "John" :exp 10}}))))
   (testing "Expire n"
     (is (= {} (expire-n {} 0 0)))
-    (is (= {} (expire-n {"Name" {:val "John" :exp 10} "Another" {:val "John" :exp 10}} 10 2)))))
+    (is (= {} (expire-n {"Name" {:val "John" :exp 10} "Another" {:val "Something" :exp 10}} 10 2)))
+    (is (= {} (expire-n {"Name" {:val "John" :exp 10} "Another" {:val "Something" :exp 10} "Baz" {:val "This" :exp 10}} 10 2)))))
