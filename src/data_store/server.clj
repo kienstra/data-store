@@ -36,5 +36,5 @@
                          (.write c (ChannelBuffers/copiedBuffer (.getBytes out)))
                          new-store)))))
     (exceptionCaught
-     [ctx e]
-     (-> e .getChannel .close))))
+      [ctx e]
+      (-> e .getChannel .close))))

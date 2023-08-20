@@ -33,5 +33,10 @@
         [store "$-1\r\n"]
         (not (string? (:val (get store (nth input 4 nil)))))
         [store "-Error not a string\r\n"]
-        :else [store (str "+" (:val (get store (nth input 4))) delim)])
+        :else (let [exp (:exp (get store (nth input 4)))
+                    expired? (and exp (> time exp))]
+                (if
+                 expired?
+                  [store "$-1\r\n"]
+                  [store (str "+" (:val (get store (nth input 4))) delim)])))
       :else [store "-Error invalid command\r\n"])))

@@ -14,12 +14,15 @@
     (is (= [{} "-Error nothing to echo\r\n"] (handler {} ["*2" "$4" "ECHO"] 0))))
   (testing "SET"
     (is (= [{} "-Error nothing to set\r\n"] (handler {} ["*1" "$3" "SET"] 0)))
-    (is (= [{} "-Error not a string\r\n"] (handler {} ["*2" "$3" "SET" "$4" "Name" "$4" 9325]0 )))
+    (is (= [{} "-Error not a string\r\n"] (handler {} ["*2" "$3" "SET" "$4" "Name" "$4" 9325] 0)))
     (is (= [{"Name" {:val "John"}} "+OK\r\n"] (handler {} ["*2" "$3" "SET" "$4" "Name" "$4" "John"] 0)))
-    (is (= [{"Name" {:val "Renamed"}} "+OK\r\n"] (handler {"Name" {:val "John"}} ["*2" "$3" "SET" "$4" "Name" "$7" "Renamed"] 0)))
+    (is (= [{"Name" {:val "Renamed"}} "+OK\r\n"] (handler {"Name" {:val "John"}} ["*2" "$3" "SET" "$4" "Name" "$7" "Renamed"] 0))))
+  (testing "SET with expiration"
     (is (= [{"Name" {:val "Renamed" :exp 100000}} "+OK\r\n"] (handler {"Name" {:val "John"}} ["*2" "$3" "SET" "$4" "Name" "$7" "Renamed" "EX" 100] 0))))
   (testing "GET"
     (is (= [{} "-Error nothing to get\r\n"] (handler {} ["*1" "$3" "GET"] 0)))
     (is (= [{} "$-1\r\n"] (handler {} ["*2" "$3" "GET" "$4" "Name"] 0)))
     (is (= [{"foo" {:val 395}} "-Error not a string\r\n"] (handler {"foo" {:val 395}} ["*2" "$3" "GET" "$3" "foo"] 0)))
-    (is (= [{"Name" {:val "John"}} "+John\r\n"] (handler {"Name" {:val "John"}} ["*2" "$3" "GET" "$4" "Name"] 0)))))
+    (is (= [{"Name" {:val "John"}} "+John\r\n"] (handler {"Name" {:val "John"}} ["*2" "$3" "GET" "$4" "Name"] 0))))
+  (testing "GET with expiration"
+    (is (= [{"Name" {:val "John" :exp 10}} "$-1\r\n"] (handler {"Name" {:val "John" :exp 10}} ["*2" "$3" "GET" "$4" "Name"] 20)))))
