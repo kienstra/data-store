@@ -22,7 +22,6 @@
 (defn expire-n [store time n]
   (let [keys-expired
         (loop [iter-keys-expired (expired (take n (has-exp store)) time)]
-          (println "iter-keys-expire:" iter-keys-expired)
           (if
            (or (< (count iter-keys-expired) (* 0.25 n)) (= (count iter-keys-expired) (count store)))
             iter-keys-expired
