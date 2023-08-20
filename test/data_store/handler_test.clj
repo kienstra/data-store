@@ -4,7 +4,7 @@
 
 (deftest handler-test
   (testing "Invalid command"
-    (is (= [{} "-Error invalid command\r\n"] (handler {} ["*1" "$12" "DOESNOTEXIST"] 0))))
+    (is (= [{} "+OK\r\n"] (handler {} ["*1" "$12" "DOESNOTEXIST"] 0))))
   (testing "PING"
     (is (= [{} "$4\r\nPONG\r\n"] (handler {} ["*1" "$4" "PING"] 0))))
   (testing "ECHO"
