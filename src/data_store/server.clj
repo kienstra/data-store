@@ -33,7 +33,7 @@
             cb (.getMessage e)
             msg (.toString cb "UTF-8")]
         (swap! store (fn [prev-store]
-                       (let [[new-store out] (handler prev-store (split msg #"\r\n"))]
+                       (let [[new-store out] (handler prev-store (split msg #"\r\n") (System/currentTimeMillis))]
                          (.write c (ChannelBuffers/copiedBuffer (.getBytes out)))
                          new-store)))))
     (exceptionCaught

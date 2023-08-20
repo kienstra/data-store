@@ -18,10 +18,10 @@
         [store (str "-Error nothing to set" delim)]
         (not (string? (nth input 6 nil)))
         [store (str "-Error not a string" delim)]
-        :else (let [sub-command (nth input 7 nil)
-                    sub-command-arg (nth input 8 nil)]
+        :else (let [sub-command (nth input 8 nil)
+                    sub-command-arg (nth input 10 nil)]
                 (if (and (= sub-command "EX") sub-command-arg)
-                  [(into store {(nth input 4) {:val (nth input 6) :exp (+ time (* 1000 sub-command-arg))}}) (str "+OK" delim)]
+                  [(into store {(nth input 4) {:val (nth input 6) :exp (+ time (* 1000 (Integer/parseInt sub-command-arg)))}}) (str "+OK" delim)]
                   [(into store {(nth input 4) {:val (nth input 6)}}) (str "+OK" delim)])))
       (= command "GET")
       (cond

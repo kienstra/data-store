@@ -18,7 +18,7 @@
     (is (= [{"Name" {:val "John"}} "+OK\r\n"] (handler {} ["*2" "$3" "SET" "$4" "Name" "$4" "John"] 0)))
     (is (= [{"Name" {:val "Renamed"}} "+OK\r\n"] (handler {"Name" {:val "John"}} ["*2" "$3" "SET" "$4" "Name" "$7" "Renamed"] 0))))
   (testing "SET with expiration"
-    (is (= [{"Name" {:val "Renamed" :exp 100000}} "+OK\r\n"] (handler {"Name" {:val "John"}} ["*2" "$3" "SET" "$4" "Name" "$7" "Renamed" "EX" 100] 0))))
+    (is (= [{"Name" {:val "Renamed" :exp 100000}} "+OK\r\n"] (handler {"Name" {:val "John"}} ["*3" "$3" "SET" "$4" "Name" "$7" "Renamed" "$2" "EX" "$3" "100"] 0))))
   (testing "GET"
     (is (= [{} "-Error nothing to get\r\n"] (handler {} ["*1" "$3" "GET"] 0)))
     (is (= [{} "$-1\r\n"] (handler {} ["*2" "$3" "GET" "$4" "Name"] 0)))
