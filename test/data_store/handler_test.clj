@@ -34,4 +34,9 @@
   (testing "SET and GET with expiration"
     (let [[store _] (handler {"Name" {:val "John"}} ["*3" "$3" "SET" "$4" "Name" "$7" "John" "$2" "EX" "$3" "100"] 100)]
       (is (= [{"Name" {:val "John" :exp 100100}} "+John\r\n"] (handler store ["*2" "$3" "GET" "$4" "Name"] 100099)))
-      (is (= [{} "$-1\r\n"] (handler store ["*2" "$3" "GET" "$4" "Name"] 100100))))))
+      (is (= [{} "$-1\r\n"] (handler store ["*2" "$3" "GET" "$4" "Name"] 100100)))))
+  (testing "EXPIRE"
+    (is (= [{} ":0\r\n"] (handler {} ["*1" "$6" "EXPIRE"] 0)))
+    (is (= [{} ":0\r\n"] (handler {} ["*2" "$6" "EXPIRE" "$4" "Name"] 0)))
+    (is (= [{} ":0\r\n"] (handler {} ["*3" "$6" "EXPIRE" "$4" "Name" "$3" "100"] 0)))
+    (is (= [{"Name" {:val "John" :exp 100000}} ":1\r\n"] (handler {"Name" {:val "John"}} ["*2" "$6" "EXPIRE" "$4" "Name" "$3" "100"] 0)))))

@@ -38,6 +38,17 @@
               [(into store {(nth input 4) {:val (nth input 6) :exp (Integer/parseInt sub-command-arg)}}) (str "+OK" delim)]
               :else [(into store {(nth input 4) {:val (nth input 6)}}) (str "+OK" delim)]))))
 
+(defn command-expire [input store time]
+  (let [store-key (nth input 4 nil)
+        exp (nth input 6 nil)]
+    (if (and
+         store-key
+         exp
+         (contains? store store-key))
+      [(into store {store-key (into (get store store-key) {:exp (+ time (* 1000 (Integer/parseInt exp)))})})
+       (str ":1" delim)]
+      [store (str ":0" delim)])))
+
 (defn command-echo [input store _]
   (if (nth input 4 false)
     [store (str "+" (nth input 4) delim)]
@@ -55,6 +66,6 @@
     (apply command-unknown args)))
 
 (defn handler [store input time]
-  (if-let [command (nth input 2)]
-    (command-handler (lower-case command) input store time)
+  (if-let [command (lower-case (nth input 2))]
+    (command-handler command input store time)
     [store (str "-Error no command" delim)]))
