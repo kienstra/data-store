@@ -1,13 +1,13 @@
 (ns data-store.expiration-test
   (:require [clojure.test :refer [deftest is testing]]
-            [data-store.expiration :refer [expired-keys expire-n has-exp]]))
+            [data-store.expiration :refer [expired expire-n has-exp]]))
 
 (deftest expiration-test
   (testing "Expired"
-    (is (= #{} (expired-keys {} 10)))
-    (is (= #{} (expired-keys {"Name" {:val "John" :exp 9} "Another" {:val "Something"}} 10)))
-    (is (= #{"Name"} (expired-keys {"Name" {:val "John" :exp 10} "Another" {:val "Something"}} 10)))
-    (is (= #{"Name" "Another"} (expired-keys {"Name" {:val "John" :exp 10} "Another" {:val "Something" :exp 10}} 10))))
+    (is (= #{} (expired {} 10)))
+    (is (= #{} (expired {"Name" {:val "John" :exp 9} "Another" {:val "Something"}} 10)))
+    (is (= #{"Name"} (expired {"Name" {:val "John" :exp 10} "Another" {:val "Something"}} 10)))
+    (is (= #{"Name" "Another"} (expired {"Name" {:val "John" :exp 10} "Another" {:val "Something" :exp 10}} 10))))
   (testing "Store with exp"
     (is (= {} (has-exp {})))
     (is (= {} (has-exp {"Name" {:val "John"}})))

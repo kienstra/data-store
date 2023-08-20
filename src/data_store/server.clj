@@ -8,12 +8,11 @@
    [org.jboss.netty.channel SimpleChannelHandler]
    [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
    [org.jboss.netty.buffer ChannelBuffers])
-  (:require [clojure.string :refer [split]]))
+  (:require [clojure.string :refer [split]]
+            [data-store.store :refer [store]]))
 
 (declare make-handler)
-(def store (atom {}))
-
-(defn serve
+(defn serve!
   [port handler]
   (let [channel-factory (NioServerSocketChannelFactory.
                          (Executors/newCachedThreadPool)

@@ -1,6 +1,6 @@
 (ns data-store.expiration)
 
-(defn expired-keys [store time]
+(defn expired [store time]
   (reduce
    (fn [acc [k v]]
      (if (and (:exp v) (>= (get v :exp) time))
@@ -20,9 +20,9 @@
 
 (defn expire-n [store time n]
   (let [keys-expired
-        (loop [expired (expired-keys (take n (has-exp store)) time)]
+        (loop [expired (expired (take n (has-exp store)) time)]
           (if
            (or (< (count expired) (* 0.25 n)) (= (count expired) (count store)))
             expired
-            (recur (expired-keys (take n (has-exp (apply dissoc store expired))) time))))]
+            (recur (expired (take n (has-exp (apply dissoc store expired))) time))))]
     (apply dissoc store keys-expired)))
