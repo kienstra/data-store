@@ -1,6 +1,4 @@
-(ns data-store.handler
-  (:require [data-store.frame :refer [serialize unserialize]]
-            [clojure.string :refer [split]]))
+(ns data-store.handler)
 
 (def delim "\r\n")
 (defn handler [store input time]

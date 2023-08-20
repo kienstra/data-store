@@ -7,7 +7,8 @@
    [org.jboss.netty.bootstrap ServerBootstrap]
    [org.jboss.netty.channel SimpleChannelHandler]
    [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
-   [org.jboss.netty.buffer ChannelBuffers]))
+   [org.jboss.netty.buffer ChannelBuffers])
+  (:require [clojure.string :refer [split]]))
 
 (declare make-handler)
 (def store (atom {}))
