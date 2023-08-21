@@ -8,7 +8,7 @@
    [org.jboss.netty.channel SimpleChannelHandler]
    [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
    [org.jboss.netty.buffer ChannelBuffers])
-  (:require [data-store.frame :refer [unserialize]]
+  (:require [clojure.string :refer [split]]
             [data-store.store :refer [store]]))
 
 (declare make-handler)
@@ -32,7 +32,13 @@
             cb (.getMessage e)
             msg (.toString cb "UTF-8")]
         (swap! store (fn [prev-store]
-                       (let [[new-store out] (handler prev-store (first (unserialize msg)) (System/currentTimeMillis))]
+                       (let [[new-store out] (handler
+                                              prev-store
+                                              (take-nth
+                                               2
+                                               (rest
+                                                (rest (split msg #"\r\n"))))
+                                              (System/currentTimeMillis))]
                          (.write c (ChannelBuffers/copiedBuffer (.getBytes out)))
                          new-store)))))
     (exceptionCaught
