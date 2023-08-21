@@ -35,14 +35,12 @@
         (if (= begin-index (count b))
           [[] begin-index]
           (let [rest-to-parse (subs b begin-index)
-                [parsed consumed] (unserialize rest-to-parse)]
-            (println "parsed is")
-            (println parsed)
-              (if
-                (= 1 number-elements)
-                [[parsed] (+ begin-index consumed)]
-                [{:error (str "Did not get all array items" parsed)} 0]
-                )))))))
+                initial (unserialize rest-to-parse)]
+            (loop [[parsed i] [(vector (first initial)) (second initial)]]
+              (if (= (count parsed) number-elements)
+                [parsed (+ i begin-index)]
+                (let [[new-parsed new-i] (unserialize (subs rest-to-parse i))]
+                  (recur [(conj parsed new-parsed) (+ i new-i)]))))))))))
 
 (defn serialize [x]
   (cond
