@@ -23,7 +23,7 @@
   (let [keys-expired
         (loop [iter-keys-expired (expired (take n (has-exp store)) time)]
           (if
-           (or (< (count iter-keys-expired) (* 0.25 n)) (= (count iter-keys-expired) (count store)))
+           (or (<= (count iter-keys-expired) (* 0.25 n)) (= (count iter-keys-expired) (count store)))
             iter-keys-expired
             (recur (union
                     iter-keys-expired
