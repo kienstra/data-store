@@ -13,7 +13,7 @@
         after-delim-index (+ delim-index (count delim))]
     (cond
       (or (= b "$-1\r\n") (= b "*-1\r\n"))
-      [nil 7]
+      [nil 5]
       (= first-char "+")
       [(subs b 1 delim-index) after-delim-index]
       (= first-char "-")
