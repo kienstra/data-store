@@ -6,7 +6,7 @@
   (testing "Invalid command"
     (is (= [{} "+OK\r\n"] (handler {} ["DOESNOTEXIST"] 0))))
   (testing "PING"
-    (is (= [{} "$4\r\nPONG\r\n"] (handler {} ["PING"] 0))))
+    (is (= [{} "+PONG\r\n"] (handler {} ["PING"] 0))))
   (testing "ECHO"
     (is (= [{} "+Hello World\r\n"] (handler {} ["ECHO" "Hello World"] 0)))
     (is (= [{} "+Simple\r\n"] (handler {} ["ECHO" "Simple"] 0)))
@@ -39,4 +39,9 @@
     (is (= [{} ":0\r\n"] (handler {} ["EXPIRE"] 0)))
     (is (= [{} ":0\r\n"] (handler {} ["EXPIRE" "Name"] 0)))
     (is (= [{} ":0\r\n"] (handler {} ["EXPIRE" "Name" "100"] 0)))
-    (is (= [{"Name" {:val "John" :exp 100000}} ":1\r\n"] (handler {"Name" {:val "John"}} ["EXPIRE" "Name" "100"] 0)))))
+    (is (= [{"Name" {:val "John" :exp 100000}} ":1\r\n"] (handler {"Name" {:val "John"}} ["EXPIRE" "Name" "100"] 0))))
+  (testing "EXISTS"
+    (is (= [{} "-Error nothing to check\r\n"] (handler {} ["EXISTS"] 0)))
+    (is (= [{} ":0\r\n"] (handler {} ["EXISTS" "Name"] 0)))
+    (is (= [{"Name" {:val "John"}} ":1\r\n"] (handler {"Name" {:val "John"}} ["EXISTS" "Name"] 0)))
+    (is (= [{"Name" {:val "John"}} ":1\r\n:0\r\n"] (handler {"Name" {:val "John"}} ["EXISTS" "Name" "Doesnotexist"] 0)))))

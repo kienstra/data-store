@@ -1,10 +1,10 @@
 (ns data-store.handler
-  (:require [clojure.string :refer [lower-case]]))
+  (:require [clojure.string :refer [join lower-case]]))
 
 (def delim "\r\n")
 
 (defn command-get [input store time]
-  (let [store-key (second input)]
+  (let [store-key (first input)]
     (cond
       (not store-key)
       [store (str "-Error nothing to get" delim)]
@@ -20,15 +20,15 @@
                 [store (str "+" (:val (get store store-key)) delim)])))))
 
 (defn command-set [input store time]
-  (let [k (nth input 1 nil)
-        v (nth input 2 nil)]
+  (let [k (first input)
+        v (second input)]
     (cond
       (or (not k) (not v))
       [store (str "-Error nothing to set" delim)]
       (not (string? v))
       [store (str "-Error not a string" delim)]
-      :else (let [sub-command (nth input 3 nil)
-                  sub-command-arg (nth input 4 nil)]
+      :else (let [sub-command (nth input 2 nil)
+                  sub-command-arg (nth input 3 nil)]
               (cond
                 (and (= sub-command "EX") sub-command-arg)
                 [(into store {k {:val v :exp (+ time (* 1000 (Integer/parseInt sub-command-arg)))}}) (str "+OK" delim)]
@@ -41,8 +41,8 @@
                 :else [(into store {k {:val v}}) (str "+OK" delim)])))))
 
 (defn command-expire [input store time]
-  (let [store-key (nth input 1 nil)
-        exp-time (nth input 2 nil)]
+  (let [store-key (first input)
+        exp-time (second input)]
     (if (and
          store-key
          exp-time
@@ -52,14 +52,22 @@
       [store (str ":0" delim)])))
 
 (defn command-echo [input store _]
-  (if-let [msg (second input)]
+  (if-let [msg (first input)]
     [store (str "+" msg delim)]
     [store (str "-Error nothing to echo" delim)]))
 
 (defn command-ping [input store _]
-  (if-let [msg (nth input 2 nil)]
-    [store (str "+" "PONG" " " msg delim)]
-    [store (str "$4" delim "PONG" delim)]))
+  (if-let [msg (first input)]
+    [store (str "+PONG" " " msg delim)]
+    [store (str "+PONG" delim)]))
+
+(defn command-exists [[& keys] store _]
+  (if
+   (first keys)
+    [store (join (map
+                  #(str ":" (if (contains? store %) "1" "0") delim)
+                  keys))]
+    [store (str "-Error nothing to check" delim)]))
 
 (defn command-unknown [_ store _]
   [store (str "+OK" delim)])
@@ -71,5 +79,5 @@
 
 (defn handler [store input time]
   (if-let [command (lower-case (first input))]
-    (command-handler command input store time)
+    (command-handler command (rest input) store time)
     [store (str "-Error no command" delim)]))
