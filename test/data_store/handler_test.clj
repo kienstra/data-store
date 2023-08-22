@@ -43,5 +43,6 @@
   (testing "EXISTS"
     (is (= [{} "-Error nothing to check\r\n"] (handler {} ["EXISTS"] 0)))
     (is (= [{} ":0\r\n"] (handler {} ["EXISTS" "Name"] 0)))
+    (is (= [{"Name" {:val nil}} ":1\r\n"] (handler {"Name" {:val nil}} ["EXISTS" "Name"] 0)))
     (is (= [{"Name" {:val "John"}} ":1\r\n"] (handler {"Name" {:val "John"}} ["EXISTS" "Name"] 0)))
     (is (= [{"Name" {:val "John"}} ":1\r\n:0\r\n"] (handler {"Name" {:val "John"}} ["EXISTS" "Name" "Doesnotexist"] 0)))))
