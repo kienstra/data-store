@@ -7,11 +7,12 @@
    [org.jboss.netty.bootstrap ServerBootstrap]
    [org.jboss.netty.channel SimpleChannelHandler]
    [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
-   [org.jboss.netty.buffer ChannelBuffers]))
+   [org.jboss.netty.buffer ChannelBuffers])
+  (:require [clojure.string :refer [split]]
+            [data-store.store :refer [store]]))
 
 (declare make-handler)
-
-(defn serve
+(defn serve!
   [port handler]
   (let [channel-factory (NioServerSocketChannelFactory.
                          (Executors/newCachedThreadPool)
@@ -26,21 +27,20 @@
 
 (defn make-handler [handler]
   (proxy [SimpleChannelHandler] []
-    (channelConnected [ctx e]
-      (let [c (.getChannel e)]
-        (println "Connected:" c)))
-
-    (channelDisconnected [ctx e]
-      (let [c (.getChannel e)]
-        (println "Disconnected:" c)))
     (messageReceived [ctx e]
       (let [c (.getChannel e)
             cb (.getMessage e)
             msg (.toString cb "UTF-8")]
-        (.write c (ChannelBuffers/copiedBuffer (.getBytes (second (handler {} msg)))))))
-
+        (swap! store (fn [prev-store]
+                       (let [[new-store out] (handler
+                                              prev-store
+                                              (take-nth
+                                               2
+                                               (rest
+                                                (rest (split msg #"\r\n"))))
+                                              (System/currentTimeMillis))]
+                         (.write c (ChannelBuffers/copiedBuffer (.getBytes out)))
+                         new-store)))))
     (exceptionCaught
       [ctx e]
-      (let [throwable (.getCause e)]
-        (println "@exceptionCaught" throwable))
       (-> e .getChannel .close))))
