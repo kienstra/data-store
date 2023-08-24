@@ -92,14 +92,14 @@
 (defn command-lpush [[key & vals] store _]
   (if key
     (let [prev-val (get (get store key) :val [])
-          new-val (vec (concat (reverse vals) prev-val))]
+          new-val (vec (apply conj (reverse vals) prev-val))]
       [(into store {key (into (get store key {}) {:val new-val})}) (serialize (count new-val))])
     [store (str "-Error nothing to push" delim)]))
 
 (defn command-rpush [[key & vals] store _]
   (if key
     (let [prev-val (get (get store key) :val [])
-          new-val (vec (concat vals prev-val))]
+          new-val (vec (apply conj vals prev-val))]
       [(into store {key (into (get store key {}) {:val new-val})}) (serialize (count new-val))])
     [store (str "-Error nothing to push" delim)]))
 
