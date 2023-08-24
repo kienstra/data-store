@@ -58,4 +58,12 @@
   (testing "DECR"
     (is (= [{} "-Error nothing to decrement\r\n"] (handler {} ["DECR"] 0)))
     (is (= [{"foo" {:val "-1"}} ":-1\r\n"] (handler {} ["DECR" "foo"] 0)))
-    (is (= [{"baz" {:val "89"}} ":89\r\n"] (handler {"baz" {:val "90"}} ["DECR" "baz"] 0)))))
+    (is (= [{"baz" {:val "89"}} ":89\r\n"] (handler {"baz" {:val "90"}} ["DECR" "baz"] 0))))
+  (testing "LPUSH"
+    (is (= [{} "-Error nothing to push\r\n"] (handler {} ["LPUSH"] 0)))
+    (is (= [{"foo" {:val ["bar"]}} ":1\r\n"] (handler {} ["LPUSH" "foo" "bar"] 0)))
+    (is (= [{"foo" {:val ["baz" "bar"]}} ":2\r\n"] (handler {} ["LPUSH" "foo" "bar" "baz"] 0))))
+  (testing "RPUSH"
+    (is (= [{} "-Error nothing to push\r\n"] (handler {} ["RPUSH"] 0)))
+    (is (= [{"foo" {:val ["bar"]}} ":1\r\n"] (handler {} ["RPUSH" "foo" "bar"] 0)))
+    (is (= [{"foo" {:val ["bar" "baz"]}} ":2\r\n"] (handler {} ["RPUSH" "foo" "bar" "baz"] 0)))))
