@@ -39,7 +39,7 @@
                                                (rest
                                                 (rest (split msg #"\r\n"))))
                                               (System/currentTimeMillis))]
-                         (.write c (ChannelBuffers/copiedBuffer (.getBytes out)))
+                         (.write c (ChannelBuffers/wrappedBuffer (.getBytes out)))
                          new-store)))))
     (exceptionCaught
       [ctx e]

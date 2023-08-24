@@ -4,7 +4,7 @@
 (defn expired [store time]
   (reduce
    (fn [acc [k v]]
-     (if (and (:exp v) (>= (:exp v) time))
+     (if (and (:exp v) (>= time (:exp v)))
        (conj acc k)
        acc))
    #{}

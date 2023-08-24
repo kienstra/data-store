@@ -6,7 +6,7 @@
   (testing "Invalid command"
     (is (= [{} "+OK\r\n"] (handler {} ["DOESNOTEXIST"] 0))))
   (testing "PING"
-    (is (= [{} "$4\r\nPONG\r\n"] (handler {} ["PING"] 0))))
+    (is (= [{} "+PONG\r\n"] (handler {} ["PING"] 0))))
   (testing "ECHO"
     (is (= [{} "+Hello World\r\n"] (handler {} ["ECHO" "Hello World"] 0)))
     (is (= [{} "+Simple\r\n"] (handler {} ["ECHO" "Simple"] 0)))
@@ -39,4 +39,31 @@
     (is (= [{} ":0\r\n"] (handler {} ["EXPIRE"] 0)))
     (is (= [{} ":0\r\n"] (handler {} ["EXPIRE" "Name"] 0)))
     (is (= [{} ":0\r\n"] (handler {} ["EXPIRE" "Name" "100"] 0)))
-    (is (= [{"Name" {:val "John" :exp 100000}} ":1\r\n"] (handler {"Name" {:val "John"}} ["EXPIRE" "Name" "100"] 0)))))
+    (is (= [{"Name" {:val "John" :exp 100000}} ":1\r\n"] (handler {"Name" {:val "John"}} ["EXPIRE" "Name" "100"] 0))))
+  (testing "EXISTS"
+    (is (= [{} "-Error nothing to check\r\n"] (handler {} ["EXISTS"] 0)))
+    (is (= [{} ":0\r\n"] (handler {} ["EXISTS" "Name"] 0)))
+    (is (= [{"Name" {:val nil}} ":1\r\n"] (handler {"Name" {:val nil}} ["EXISTS" "Name"] 0)))
+    (is (= [{"Name" {:val "John"}} ":1\r\n"] (handler {"Name" {:val "John"}} ["EXISTS" "Name"] 0)))
+    (is (= [{"Name" {:val "John"}} ":1\r\n:0\r\n"] (handler {"Name" {:val "John"}} ["EXISTS" "Name" "Doesnotexist"] 0))))
+  (testing "DELETE"
+    (is (= [{} "-Error nothing to delete\r\n"] (handler {} ["DELETE"] 0)))
+    (is (= [{} ":0\r\n"] (handler {} ["DELETE" "Name"] 0)))
+    (is (= [{} ":1\r\n"] (handler {"foo" {:value "bar"}} ["DELETE" "foo"] 0)))
+    (is (= [{} ":2\r\n"] (handler {"foo" {:value "bar"} "another" {:value "something"}} ["DELETE" "foo" "another"] 0))))
+  (testing "INCR"
+    (is (= [{} "-Error nothing to increment\r\n"] (handler {} ["INCR"] 0)))
+    (is (= [{"foo" {:val "1"}} ":1\r\n"] (handler {} ["INCR" "foo"] 0)))
+    (is (= [{"baz" {:val "91"}} ":91\r\n"] (handler {"baz" {:val "90"}} ["INCR" "baz"] 0))))
+  (testing "DECR"
+    (is (= [{} "-Error nothing to decrement\r\n"] (handler {} ["DECR"] 0)))
+    (is (= [{"foo" {:val "-1"}} ":-1\r\n"] (handler {} ["DECR" "foo"] 0)))
+    (is (= [{"baz" {:val "89"}} ":89\r\n"] (handler {"baz" {:val "90"}} ["DECR" "baz"] 0))))
+  (testing "LPUSH"
+    (is (= [{} "-Error nothing to push\r\n"] (handler {} ["LPUSH"] 0)))
+    (is (= [{"foo" {:val ["bar"]}} ":1\r\n"] (handler {} ["LPUSH" "foo" "bar"] 0)))
+    (is (= [{"foo" {:val ["baz" "bar"]}} ":2\r\n"] (handler {} ["LPUSH" "foo" "bar" "baz"] 0))))
+  (testing "RPUSH"
+    (is (= [{} "-Error nothing to push\r\n"] (handler {} ["RPUSH"] 0)))
+    (is (= [{"foo" {:val ["bar"]}} ":1\r\n"] (handler {} ["RPUSH" "foo" "bar"] 0)))
+    (is (= [{"foo" {:val ["bar" "baz"]}} ":2\r\n"] (handler {} ["RPUSH" "foo" "bar" "baz"] 0)))))

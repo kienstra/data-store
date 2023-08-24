@@ -5,7 +5,7 @@
 (deftest expiration-test
   (testing "Get keys that have expired"
     (is (= #{} (expired {} 10)))
-    (is (= #{} (expired {"Name" {:val "John" :exp 9} "Another" {:val "Something"}} 10)))
+    (is (= #{"Name"} (expired {"Name" {:val "John" :exp 9} "Another" {:val "Something"}} 10)))
     (is (= #{"Name"} (expired {"Name" {:val "John" :exp 10} "Another" {:val "Something"}} 10)))
     (is (= #{"Name" "Another"} (expired {"Name" {:val "John" :exp 10} "Another" {:val "Something" :exp 10}} 10))))
   (testing "Get keys with any expiration, even if not expired"
