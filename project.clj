@@ -8,12 +8,12 @@
                  [org.jboss.netty/netty "3.2.7.Final"]
                  [org.clojure/data.finger-tree "0.0.1"]
                  [com.clojure-goes-fast/clj-async-profiler "1.0.5"]]
-  :plugins [[lein-cljfmt "0.9.2"]]
   :main ^:skip-aot data-store.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
              :dev {:aot :all
-                       :jvm-opts ["-Djdk.attach.allowAttachSelf"
-                                  "-XX:+UnlockDiagnosticVMOptions"
-                                  "-XX:+DebugNonSafepoints"]}})
+                   :jvm-opts ["-Djdk.attach.allowAttachSelf"
+                              "-XX:+UnlockDiagnosticVMOptions"
+                              "-XX:+DebugNonSafepoints"]
+                   :plugins [[lein-cljfmt "0.9.2"]]}})
