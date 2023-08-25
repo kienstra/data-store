@@ -1,46 +1,124 @@
-; Props Artem Yankov for most of this file
-; https://github.com/yankov/memobot/blob/9498f02d1f32c3133c67581f31e959557e05048f/src/memobot/core.clj
+; Props Techniek for most of this file
+; https://infi.nl/nieuws/writing-a-tcp-proxy-using-netty-and-clojure/
 (ns data-store.server
   (:import
-   [java.net InetSocketAddress]
-   [java.util.concurrent Executors]
-   [org.jboss.netty.bootstrap ServerBootstrap]
-   [org.jboss.netty.channel SimpleChannelHandler]
-   [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
-   [org.jboss.netty.buffer ChannelBuffers])
+   [io.netty.bootstrap ServerBootstrap Bootstrap]
+   [io.netty.channel.socket.nio NioServerSocketChannel NioSocketChannel]
+   [io.netty.channel ChannelInboundHandlerAdapter
+    ChannelInitializer ChannelOption ChannelHandler ChannelFutureListener
+    ChannelOutboundHandlerAdapter]
+   [io.netty.channel.nio NioEventLoopGroup]
+   [io.netty.handler.codec ByteToMessageDecoder]
+   [io.netty.handler.logging LoggingHandler LogLevel]
+   [io.netty.buffer Unpooled]
+   [java.nio ByteBuffer ByteOrder]
+   [java.io ByteArrayOutputStream]
+   [io.netty.handler.codec.bytes ByteArrayEncoder]
+   [java.util.concurrent LinkedBlockingQueue Executors]
+   [java.util ArrayList]
+   [java.time Instant])
   (:require [clojure.string :refer [split]]
             [data-store.store :refer [store]]))
 
-(declare make-handler)
-(defn serve!
-  [port handler]
-  (let [channel-factory (NioServerSocketChannelFactory.
-                         (Executors/newCachedThreadPool)
-                         (Executors/newCachedThreadPool))
-        bootstrap (ServerBootstrap. channel-factory)
-        pipeline (.getPipeline bootstrap)]
-    (.addLast pipeline "handler" (make-handler handler))
-    (.setOption bootstrap "child.tcpNoDelay", true)
-    (.setOption bootstrap "child.keepAlive", true)
-    (.bind bootstrap (InetSocketAddress. port))
-    pipeline))
+(declare client-proxy-handler)
+(declare flush-and-close)
 
-(defn make-handler [handler]
-  (proxy [SimpleChannelHandler] []
-    (messageReceived [ctx e]
-      (let [c (.getChannel e)
-            cb (.getMessage e)
-            msg (.toString cb "UTF-8")]
-        (swap! store (fn [prev-store]
-                       (let [[new-store out] (handler
-                                              prev-store
-                                              (take-nth
-                                               2
-                                               (rest
-                                                (rest (split msg #"\r\n"))))
-                                              (System/currentTimeMillis))]
-                         (.write c (ChannelBuffers/wrappedBuffer (.getBytes out)))
-                         new-store)))))
-    (exceptionCaught
-      [ctx e]
-      (-> e .getChannel .close))))
+(defn init-server-bootstrap
+  [group handlers-factory]
+  (.. (ServerBootstrap.)
+      (group group)
+      (channel NioServerSocketChannel)
+      (childHandler
+       (proxy [ChannelInitializer] []
+         (initChannel [channel]
+           (let [handlers (handlers-factory)]
+             (.. channel
+                 (pipeline)
+                 (addLast (into-array ChannelHandler handlers)))))))
+      (childOption ChannelOption/SO_KEEPALIVE true)
+      (childOption ChannelOption/AUTO_READ false)
+      (childOption ChannelOption/AUTO_CLOSE false)))
+
+(defn connect-client
+  [source-channel target-host target-port]
+  (.. (Bootstrap.)
+      (group (.. source-channel eventLoop))
+      (channel (.. source-channel getClass))
+      (option ChannelOption/SO_KEEPALIVE true)
+      (option ChannelOption/AUTO_READ false)
+      (option ChannelOption/AUTO_CLOSE false)
+      (handler
+       (proxy [ChannelInitializer] []
+         (initChannel [channel]
+           (.. channel
+               pipeline
+               (addLast (into-array ChannelHandler
+                                    [(client-proxy-handler source-channel)]))))))
+      (connect target-host target-port)))
+
+(defn proxy-handler [target-host target-port]
+  (let [outgoing-channel (atom nil)]
+    (proxy [ChannelInboundHandlerAdapter] []
+      (channelActive [ctx]
+        (->
+         (connect-client (.. ctx channel) target-host target-port)
+         (.addListener
+          (proxy [ChannelFutureListener] []
+            (operationComplete [complete-future]
+              (if (.isSuccess complete-future)
+                (do
+                  (reset! outgoing-channel (.channel complete-future))
+                  (.. ctx channel read))
+                (.close (.. ctx channel))))))))
+      (channelRead [ctx msg]
+        (->
+         (.writeAndFlush @outgoing-channel msg)
+         (.addListener
+          (proxy [ChannelFutureListener] []
+            (operationComplete [complete-future]
+              (if (.isSuccess complete-future)
+                (.. ctx channel read)
+                (flush-and-close (.. ctx channel))))))))
+      (channelInactive [ctx]
+        (when @outgoing-channel
+          (flush-and-close @outgoing-channel))))))
+
+(defn start-server [port handlers-factory]
+  (let [event-loop-group (NioEventLoopGroup.)
+        bootstrap (init-server-bootstrap event-loop-group handlers-factory)
+        channel (.. bootstrap (bind port) (sync) (channel))]
+    (-> channel
+        .closeFuture
+        (.addListener
+         (proxy [ChannelFutureListener] []
+           (operationComplete [fut]
+             (.shutdownGracefully event-loop-group)))))
+    channel))
+
+(defn flush-and-close [channel]
+  (->
+   (.writeAndFlush channel (Unpooled/wrappedBuffer (.getBytes "+PONG\r\n")))
+   (.addListener ChannelFutureListener/CLOSE)))
+
+(defn client-proxy-handler
+  [source-channel]
+  (proxy [ChannelInboundHandlerAdapter] []
+    (channelActive [ctx]
+      (.. ctx channel read))
+    (channelInactive [ctx]
+      (flush-and-close source-channel))
+    (channelRead [ctx msg]
+      (->
+       (.writeAndFlush source-channel msg)
+       (.addListener
+        (proxy [ChannelFutureListener] []
+          (operationComplete [complete-future]
+            (if (.isSuccess complete-future)
+              (.. ctx channel read)
+              (flush-and-close (.. ctx channel))))))))))
+
+(defn serve! [port _]
+  (start-server
+   port
+   (fn []
+     [(proxy-handler "localhost" port)])))
