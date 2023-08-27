@@ -163,8 +163,8 @@
     (serialize (count (get (get new-store key) :val [])))
     (str "-Error nothing to push" delim)))
 
-(defn command-output-unknown []
-  (serialize "OK"))
+(defn command-output-unknown [command ]
+  (serialize {:error (str "Error unknown command: " command)}))
 
 (defn command-store-unknown [_ _ store]
   store)
