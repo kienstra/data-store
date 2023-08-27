@@ -53,4 +53,6 @@
     (vector? x)
     (let [length (count x)]
       (str "*" length delim (join (map serialize x))))
+    (contains? x :error)
+    (str "-" (:error x) delim)
     :else {:error "Could not serialize"}))
