@@ -1,8 +1,6 @@
 (ns data-store.handler
   (:require [clojure.string :refer [join lower-case]]
-            [data-store.frame :refer [serialize]]))
-
-(def delim "\r\n")
+            [data-store.frame :refer [delim serialize]]))
 
 (defn command-store-get [input time store]
   (let [store-key (first input)]
@@ -172,11 +170,11 @@
   store)
 
 (defn store-handler-strategy [[command & args] time store]
-  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-store-" command)))]
+  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-store-" (lower-case command))))]
     (dispatch-handler args time store)
     (command-store-unknown args time store)))
 
 (defn output-handler-strategy [[command & args] time old-store new-store]
-  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-output-" command)))]
+  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-output-" (lower-case command))))]
     (dispatch-handler args time old-store new-store)
     (command-output-unknown)))
