@@ -171,15 +171,12 @@
 (defn command-store-unknown [_ _ store]
   store)
 
-(defn output-handler [command & args]
-  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-output-" command)))]
-    (apply dispatch-handler args)
-    (command-output-unknown)))
-
 (defn store-handler-strategy [[command & args] time store]
-    (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-store-" command)))]
-     (dispatch-handler args time store)
-     (command-store-unknown args time store)))
+  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-store-" command)))]
+    (dispatch-handler args time store)
+    (command-store-unknown args time store)))
 
-(defn output-handler-strategy [input time old-store new-store]
-  (output-handler (lower-case (first input)) (rest input) time old-store new-store))
+(defn output-handler-strategy [[command & args] time old-store new-store]
+  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-output-" command)))]
+    (dispatch-handler args time old-store new-store)
+    (command-output-unknown)))

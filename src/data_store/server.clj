@@ -50,7 +50,7 @@
                                                        input
                                                        (System/currentTimeMillis)
                                                        prev-store)))]
-            (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler input (System/currentTimeMillis) old-store new-store))))))
+        (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler input (System/currentTimeMillis) old-store new-store))))))
     (exceptionCaught
       [ctx e])))
 
