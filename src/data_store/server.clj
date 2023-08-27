@@ -2,27 +2,16 @@
 ; https://infi.nl/nieuws/writing-a-tcp-proxy-using-netty-and-clojure/
 (ns data-store.server
   (:import
-   [io.netty.bootstrap ServerBootstrap Bootstrap]
-   [io.netty.channel.socket.nio NioServerSocketChannel NioSocketChannel]
+   [io.netty.bootstrap ServerBootstrap]
+   [io.netty.channel.socket.nio NioServerSocketChannel]
    [io.netty.channel ChannelInboundHandlerAdapter
-    ChannelInitializer ChannelOption ChannelHandler ChannelFutureListener
-    ChannelOutboundHandlerAdapter]
+    ChannelInitializer ChannelOption ChannelHandler
+    ChannelFutureListener]
    [io.netty.channel.nio NioEventLoopGroup]
-   [io.netty.handler.codec ByteToMessageDecoder]
-   [io.netty.handler.logging LoggingHandler LogLevel]
    [io.netty.buffer Unpooled]
-   [java.nio ByteBuffer ByteOrder]
-   [java.io ByteArrayOutputStream]
-   [io.netty.handler.codec.bytes ByteArrayEncoder]
-   [java.util.concurrent LinkedBlockingQueue Executors]
-   [java.nio.charset StandardCharsets]
-   [java.util ArrayList]
-   [java.time Instant])
+   [java.nio.charset StandardCharsets])
   (:require [clojure.string :refer [split]]
-            [clojure.pprint :refer [pprint]]
             [data-store.store :refer [store]]))
-
-(declare flush-and-close)
 
 (defn init-server-bootstrap
   [group handlers-factory]
@@ -40,28 +29,30 @@
       (childOption ChannelOption/AUTO_READ true)
       (childOption ChannelOption/AUTO_CLOSE true)))
 
+(defn flush-and-close [channel]
+  (->
+   (.writeAndFlush channel Unpooled/EMPTY_BUFFER)
+   (.addListener ChannelFutureListener/CLOSE)))
+
 (defn server-handler [handler]
-  (let [outgoing-channel (atom nil)]
-    (proxy [ChannelInboundHandlerAdapter] []
-      (channelActive [ctx]
-        (.. ctx channel read))
-      (channelRead [ctx msg]
-        (swap! store (fn [prev-store]
-                       (let [[new-store out] (handler
-                                              prev-store
-                                              (take-nth
-                                               2
-                                               (rest
-                                                (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))
-                                              (System/currentTimeMillis))]
-                         (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes out)))
-                         new-store))))
-      (channelInactive [ctx]
-                       (flush-and-close (.. ctx channel)))
-      (exceptionCaught
-       [ctx e]
-       (pprint e)
-       (.close (.. ctx channel))))))
+  (proxy [ChannelInboundHandlerAdapter] []
+    (channelActive [ctx]
+      (.. ctx channel read))
+    (channelInactive [ctx]
+      (flush-and-close (.channel ctx)))
+    (channelRead [ctx msg]
+      (swap! store (fn [prev-store]
+                     (let [[new-store out] (handler
+                                            prev-store
+                                            (take-nth
+                                             2
+                                             (rest
+                                              (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))
+                                            (System/currentTimeMillis))]
+                       (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes out)))
+                       new-store))))
+    (exceptionCaught
+      [ctx e])))
 
 (defn start-server [port handlers-factory]
   (let [event-loop-group (NioEventLoopGroup.)
@@ -69,19 +60,7 @@
         channel (.. bootstrap (bind port) (sync) (channel))]
     channel))
 
-(defn flush-and-close [channel]
-  (.writeAndFlush channel Unpooled/EMPTY_BUFFER))
-
-(defn print-netty-inbound-handler []
-  (proxy [ChannelInboundHandlerAdapter] []
-    (channelRead [ctx msg]
-      (pprint msg)
-      (.fireChannelRead ctx msg))))
-
 (defn serve! [port handler]
   (start-server
    port
-   (fn []
-     [(LoggingHandler. "proxy" LogLevel/INFO)
-      (print-netty-inbound-handler)
-      (server-handler handler)])))
+   (fn [] [(server-handler handler)])))
