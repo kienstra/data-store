@@ -4,42 +4,68 @@
 
 (def delim "\r\n")
 
-(defn command-get [input store time]
+(defn command-store-get [input store time]
   (let [store-key (first input)]
     (cond
       (not store-key)
-      [store (str "-Error nothing to get" delim)]
+      store
       (not (contains? store store-key))
-      [store (serialize nil)]
+      store
       (not (string? (:val (get store store-key))))
-      [store (str "-Error not a string" delim)]
+      store
       :else (let [exp (:exp (get store store-key))
                   expired? (and exp (>= time exp))]
               (if
                expired?
-                [(dissoc store store-key) (serialize nil)]
-                [store (serialize (:val (get store store-key)))])))))
+                (dissoc store store-key)
+                store)))))
 
-(defn command-set [input store time]
+(defn command-output-get [input store time]
+  (let [store-key (first input)]
+    (cond
+      (not store-key)
+      (str "-Error nothing to get" delim)
+      (not (contains? store store-key))
+      (serialize nil)
+      (not (string? (:val (get store store-key))))
+      (str "-Error not a string" delim)
+      :else (let [exp (:exp (get store store-key))
+                  expired? (and exp (>= time exp))]
+              (if
+               expired?
+                (serialize nil)
+                (serialize (:val (get store store-key))))))))
+
+(defn command-store-set [input store time]
   (let [k (first input)
         v (second input)]
     (cond
       (or (not k) (not v))
-      [store (str "-Error nothing to set" delim)]
+      store
       (not (string? v))
-      [store (str "-Error not a string" delim)]
+      store
       :else (let [sub-command (nth input 2 nil)
                   sub-command-arg (nth input 3 nil)]
               (cond
                 (and (= sub-command "EX") sub-command-arg)
-                [(into store {k {:val v :exp (+ time (* 1000 (Integer/parseInt sub-command-arg)))}}) (serialize "OK")]
+                (into store {k {:val v :exp (+ time (* 1000 (Integer/parseInt sub-command-arg)))}})
                 (and (= sub-command "PEX") sub-command-arg)
-                [(into store {k {:val v :exp (+ time (Integer/parseInt sub-command-arg))}}) (serialize "OK")]
+                (into store {k {:val v :exp (+ time (Integer/parseInt sub-command-arg))}})
                 (and (= sub-command "EXAT") sub-command-arg)
-                [(into store {k {:val v :exp (* 1000 (Integer/parseInt sub-command-arg))}}) (serialize "OK")]
+                (into store {k {:val v :exp (* 1000 (Integer/parseInt sub-command-arg))}})
                 (and (= sub-command "PXAT") sub-command-arg)
-                [(into store {k {:val v :exp (Integer/parseInt sub-command-arg)}}) (serialize "OK")]
-                :else [(into store {k {:val v}}) (serialize "OK")])))))
+                (into store {k {:val v :exp (Integer/parseInt sub-command-arg)}})
+                :else (into store {k {:val v}}))))))
+
+(defn command-output-set [input _ _]
+  (let [k (first input)
+        v (second input)]
+    (cond
+      (or (not k) (not v))
+      (str "-Error nothing to set" delim)
+      (not (string? v))
+      (str "-Error not a string" delim)
+      :else (serialize "OK"))))
 
 (defn command-expire [input store time]
   (let [store-key (first input)
@@ -103,13 +129,24 @@
       [(into store {key (into (get store key {}) {:val new-val})}) (serialize (count new-val))])
     [store (str "-Error nothing to push" delim)]))
 
-(defn command-unknown [_ store _]
-  [store (serialize "OK")])
+(defn command-output-unknown []
+  (serialize "OK"))
 
-(defn command-handler [command & args]
-  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-" command)))]
+(defn command-store-unknown [_ store _]
+  store)
+
+(defn store-handler [command & args]
+  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-store-" command)))]
     (apply dispatch-handler args)
-    (apply command-unknown args)))
+    (apply command-store-unknown args)))
 
-(defn handler [store input time]
-  (command-handler (lower-case (first input)) (rest input) store time))
+(defn store-handler-adapter [store input time]
+  (store-handler (lower-case (first input)) (rest input) store time))
+
+(defn output-handler [command & args]
+  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-output-" command)))]
+    (apply dispatch-handler args)
+    (command-output-unknown)))
+
+(defn output-handler-adapter [store input time]
+  (output-handler (lower-case (first input)) (rest input) store time))

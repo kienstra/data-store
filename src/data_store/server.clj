@@ -4,7 +4,7 @@
   (:import
    [io.netty.bootstrap ServerBootstrap]
    [io.netty.channel.socket.nio NioServerSocketChannel]
-   [io.netty.channel ChannelInboundHandlerAdapter
+   [io.netty.channel SimpleChannelInboundHandler
     ChannelInitializer ChannelOption ChannelHandler
     ChannelFutureListener]
    [io.netty.channel.nio NioEventLoopGroup]
@@ -34,23 +34,31 @@
    (.writeAndFlush channel Unpooled/EMPTY_BUFFER)
    (.addListener ChannelFutureListener/CLOSE)))
 
-(defn server-handler [handler]
-  (proxy [ChannelInboundHandlerAdapter] []
+(defn server-handler [output-handler store-handler]
+  (proxy [SimpleChannelInboundHandler] []
     (channelActive [ctx]
       (.. ctx channel read))
     (channelInactive [ctx]
-      (flush-and-close (.channel ctx)))
-    (channelRead [ctx msg]
-      (swap! store (fn [prev-store]
-                     (let [[new-store out] (handler
-                                            prev-store
-                                            (take-nth
-                                             2
-                                             (rest
-                                              (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))
-                                            (System/currentTimeMillis))]
-                       (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes out)))
-                       new-store))))
+      (flush-and-close (.. ctx channel)))
+    (channelRead0 [ctx msg]
+      ; store-handler
+      ; output-handler
+      ; If there's a store-handler, run swap-values! with that
+      ; Run output-handler on the new-store and previous-store
+      ; There should always be an output handler
+      ; So the swap-values! function should be pure
+      (let [input (take-nth
+                   2
+                   (rest
+                    (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))]
+        (if store-handler
+          (let [[old-store new-store] (swap-vals! store (fn [prev-store]
+                                                          (store-handler
+                                                           prev-store
+                                                           input
+                                                           (System/currentTimeMillis))))]
+            (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler new-store input (System/currentTimeMillis))))))
+          (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler @store input (System/currentTimeMillis))))))))
     (exceptionCaught
       [ctx e])))
 
@@ -60,7 +68,7 @@
         channel (.. bootstrap (bind port) (sync) (channel))]
     channel))
 
-(defn serve! [port handler]
+(defn serve! [port output-handler store-handler]
   (start-server
    port
-   (fn [] [(server-handler handler)])))
+   (fn [] [(server-handler output-handler store-handler)])))
