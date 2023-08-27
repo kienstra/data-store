@@ -41,15 +41,16 @@
     (channelInactive [ctx]
       (flush-and-close (.channel ctx)))
     (channelRead [ctx msg]
-      (let [[new-store out] (handler
-                                            @store
+      (swap! store (fn [prev-store]
+                     (let [[new-store out] (handler
+                                            prev-store
                                             (take-nth
                                              2
                                              (rest
                                               (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))
                                             (System/currentTimeMillis))]
                        (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes out)))
-                       new-store))
+                       new-store))))
     (exceptionCaught
       [ctx e])))
 
