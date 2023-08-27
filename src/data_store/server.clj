@@ -5,8 +5,7 @@
    [io.netty.bootstrap ServerBootstrap]
    [io.netty.channel.socket.nio NioServerSocketChannel]
    [io.netty.channel SimpleChannelInboundHandler
-    ChannelInitializer ChannelOption ChannelHandler
-    ChannelFutureListener]
+    ChannelInitializer ChannelOption ChannelHandler]
    [io.netty.channel.nio NioEventLoopGroup]
    [io.netty.buffer Unpooled]
    [java.nio.charset StandardCharsets])
@@ -29,17 +28,8 @@
       (childOption ChannelOption/AUTO_READ true)
       (childOption ChannelOption/AUTO_CLOSE true)))
 
-(defn flush-and-close [channel]
-  (->
-   (.writeAndFlush channel Unpooled/EMPTY_BUFFER)
-   (.addListener ChannelFutureListener/CLOSE)))
-
 (defn server-handler [output-handler store-handler]
   (proxy [SimpleChannelInboundHandler] []
-    (channelActive [ctx]
-      (.. ctx channel read))
-    (channelInactive [ctx]
-      (flush-and-close (.. ctx channel)))
     (channelRead0 [ctx msg]
       (let [input (take-nth
                    2
