@@ -15,6 +15,7 @@
    [java.io ByteArrayOutputStream]
    [io.netty.handler.codec.bytes ByteArrayEncoder]
    [java.util.concurrent LinkedBlockingQueue Executors]
+   [java.nio.charset StandardCharsets]
    [java.util ArrayList]
    [java.time Instant])
   (:require [clojure.string :refer [split]]
@@ -39,21 +40,23 @@
       (childOption ChannelOption/AUTO_READ false)
       (childOption ChannelOption/AUTO_CLOSE false)))
 
-(defn server-handler []
+(defn server-handler [handler]
   (let [outgoing-channel (atom nil)]
     (proxy [ChannelInboundHandlerAdapter] []
       (channelActive [ctx]
         (->
          (.. ctx channel read)))
       (channelRead [ctx msg]
-        (->
-         (.writeAndFlush ctx msg)
-         (.addListener
-          (proxy [ChannelFutureListener] []
-            (operationComplete [complete-future]
-              (if (.isSuccess complete-future)
-                (.. ctx channel read)
-                (flush-and-close (.. ctx channel))))))))
+        (swap! store (fn [prev-store]
+                       (let [[new-store out] (handler
+                                              prev-store
+                                              (take-nth
+                                               2
+                                               (rest
+                                                (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))
+                                              (System/currentTimeMillis))]
+                         (.writeAndFlush ctx (Unpooled/wrappedBuffer (.getBytes out)))
+                         new-store))))
       (channelInactive [ctx]
         (when @outgoing-channel
           (flush-and-close @outgoing-channel)))
@@ -80,10 +83,10 @@
       (pprint msg)
       (.fireChannelRead ctx msg))))
 
-(defn serve! [port _]
+(defn serve! [port handler]
   (start-server
    port
    (fn []
      [(LoggingHandler. "proxy" LogLevel/INFO)
       (print-netty-inbound-handler)
-      (server-handler)])))
+      (server-handler handler)])))
