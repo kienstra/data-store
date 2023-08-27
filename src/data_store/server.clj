@@ -18,9 +18,9 @@
    [java.util ArrayList]
    [java.time Instant])
   (:require [clojure.string :refer [split]]
+            [clojure.pprint :refer [pprint]]
             [data-store.store :refer [store]]))
 
-(declare client-proxy-handler)
 (declare flush-and-close)
 
 (defn init-server-bootstrap
@@ -39,40 +39,15 @@
       (childOption ChannelOption/AUTO_READ false)
       (childOption ChannelOption/AUTO_CLOSE false)))
 
-(defn connect-client
-  [source-channel target-host target-port]
-  (.. (Bootstrap.)
-      (group (.. source-channel eventLoop))
-      (channel (.. source-channel getClass))
-      (option ChannelOption/SO_KEEPALIVE true)
-      (option ChannelOption/AUTO_READ false)
-      (option ChannelOption/AUTO_CLOSE false)
-      (handler
-       (proxy [ChannelInitializer] []
-         (initChannel [channel]
-           (.. channel
-               pipeline
-               (addLast (into-array ChannelHandler
-                                    [(client-proxy-handler source-channel)]))))))
-      (connect target-host target-port)))
-
-(defn proxy-handler [target-host target-port]
+(defn server-handler []
   (let [outgoing-channel (atom nil)]
     (proxy [ChannelInboundHandlerAdapter] []
       (channelActive [ctx]
         (->
-         (connect-client (.. ctx channel) target-host target-port)
-         (.addListener
-          (proxy [ChannelFutureListener] []
-            (operationComplete [complete-future]
-              (if (.isSuccess complete-future)
-                (do
-                  (reset! outgoing-channel (.channel complete-future))
-                  (.. ctx channel read))
-                (.close (.. ctx channel))))))))
+         (.. ctx channel read)))
       (channelRead [ctx msg]
         (->
-         (.writeAndFlush @outgoing-channel msg)
+         (.writeAndFlush ctx msg)
          (.addListener
           (proxy [ChannelFutureListener] []
             (operationComplete [complete-future]
@@ -81,44 +56,34 @@
                 (flush-and-close (.. ctx channel))))))))
       (channelInactive [ctx]
         (when @outgoing-channel
-          (flush-and-close @outgoing-channel))))))
+          (flush-and-close @outgoing-channel)))
+      (exceptionCaught
+       [ctx e]
+       (pprint e)
+       (.close (.. ctx channel))))))
 
 (defn start-server [port handlers-factory]
   (let [event-loop-group (NioEventLoopGroup.)
         bootstrap (init-server-bootstrap event-loop-group handlers-factory)
         channel (.. bootstrap (bind port) (sync) (channel))]
-    (-> channel
-        .closeFuture
-        (.addListener
-         (proxy [ChannelFutureListener] []
-           (operationComplete [fut]
-             (.shutdownGracefully event-loop-group)))))
+
     channel))
 
 (defn flush-and-close [channel]
   (->
-   (.writeAndFlush channel (Unpooled/wrappedBuffer (.getBytes "+PONG\r\n")))
+   (.writeAndFlush channel Unpooled/EMPTY_BUFFER)
    (.addListener ChannelFutureListener/CLOSE)))
 
-(defn client-proxy-handler
-  [source-channel]
+(defn print-netty-inbound-handler []
   (proxy [ChannelInboundHandlerAdapter] []
-    (channelActive [ctx]
-      (.. ctx channel read))
-    (channelInactive [ctx]
-      (flush-and-close source-channel))
     (channelRead [ctx msg]
-      (->
-       (.writeAndFlush source-channel msg)
-       (.addListener
-        (proxy [ChannelFutureListener] []
-          (operationComplete [complete-future]
-            (if (.isSuccess complete-future)
-              (.. ctx channel read)
-              (flush-and-close (.. ctx channel))))))))))
+      (pprint msg)
+      (.fireChannelRead ctx msg))))
 
 (defn serve! [port _]
   (start-server
    port
    (fn []
-     [(proxy-handler "localhost" port)])))
+     [(LoggingHandler. "proxy" LogLevel/INFO)
+      (print-netty-inbound-handler)
+      (server-handler)])))
