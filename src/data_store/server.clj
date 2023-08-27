@@ -4,7 +4,7 @@
   (:import
    [io.netty.bootstrap ServerBootstrap]
    [io.netty.channel.socket.nio NioServerSocketChannel]
-   [io.netty.channel ChannelInboundHandlerAdapter
+   [io.netty.channel SimpleChannelInboundHandler
     ChannelInitializer ChannelOption ChannelHandler
     ChannelFutureListener]
    [io.netty.channel.nio NioEventLoopGroup]
@@ -35,12 +35,12 @@
    (.addListener ChannelFutureListener/CLOSE)))
 
 (defn server-handler [handler]
-  (proxy [ChannelInboundHandlerAdapter] []
+  (proxy [SimpleChannelInboundHandler] []
     (channelActive [ctx]
       (.. ctx channel read))
     (channelInactive [ctx]
       (flush-and-close (.channel ctx)))
-    (channelRead [ctx msg]
+    (channelRead0 [ctx msg]
       (swap! store (fn [prev-store]
                      (let [[new-store out] (handler
                                             prev-store
