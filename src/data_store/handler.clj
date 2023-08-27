@@ -177,4 +177,4 @@
 (defn output-handler-strategy [[command & args] time old-store new-store]
   (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-output-" (lower-case command))))]
     (dispatch-handler args time old-store new-store)
-    (command-output-unknown)))
+    (command-output-unknown command)))
