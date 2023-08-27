@@ -37,15 +37,14 @@
                  (pipeline)
                  (addLast (into-array ChannelHandler handlers)))))))
       (childOption ChannelOption/SO_KEEPALIVE true)
-      (childOption ChannelOption/AUTO_READ false)
-      (childOption ChannelOption/AUTO_CLOSE false)))
+      (childOption ChannelOption/AUTO_READ true)
+      (childOption ChannelOption/AUTO_CLOSE true)))
 
 (defn server-handler [handler]
   (let [outgoing-channel (atom nil)]
     (proxy [ChannelInboundHandlerAdapter] []
       (channelActive [ctx]
-        (->
-         (.. ctx channel read)))
+        (.. ctx channel read))
       (channelRead [ctx msg]
         (swap! store (fn [prev-store]
                        (let [[new-store out] (handler
@@ -55,11 +54,10 @@
                                                (rest
                                                 (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))
                                               (System/currentTimeMillis))]
-                         (.writeAndFlush ctx (Unpooled/wrappedBuffer (.getBytes out)))
+                         (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes out)))
                          new-store))))
       (channelInactive [ctx]
-        (when @outgoing-channel
-          (flush-and-close @outgoing-channel)))
+                       (flush-and-close (.. ctx channel)))
       (exceptionCaught
        [ctx e]
        (pprint e)
@@ -69,13 +67,10 @@
   (let [event-loop-group (NioEventLoopGroup.)
         bootstrap (init-server-bootstrap event-loop-group handlers-factory)
         channel (.. bootstrap (bind port) (sync) (channel))]
-
     channel))
 
 (defn flush-and-close [channel]
-  (->
-   (.writeAndFlush channel Unpooled/EMPTY_BUFFER)
-   (.addListener ChannelFutureListener/CLOSE)))
+  (.writeAndFlush channel Unpooled/EMPTY_BUFFER))
 
 (defn print-netty-inbound-handler []
   (proxy [ChannelInboundHandlerAdapter] []
