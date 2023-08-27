@@ -24,7 +24,6 @@
              (.. channel
                  (pipeline)
                  (addLast (into-array ChannelHandler handlers)))))))
-      (childOption ChannelOption/SO_KEEPALIVE true)
       (childOption ChannelOption/AUTO_READ true)
       (childOption ChannelOption/AUTO_CLOSE true)))
 
