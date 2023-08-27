@@ -1,8 +1,6 @@
 (ns data-store.handler
   (:require [clojure.string :refer [join lower-case]]
-            [data-store.frame :refer [serialize]]))
-
-(def delim "\r\n")
+            [data-store.frame :refer [delim serialize]]))
 
 (defn command-store-get [input time store]
   (let [store-key (first input)]
@@ -92,8 +90,8 @@
     (serialize msg)
     (str "-Error nothing to echo" delim)))
 
-(defn command-output-ping [input _ _ _]
-  (if-let [msg (first input)]
+(defn command-output-ping [[msg] _ _ _]
+  (if msg
     (serialize (str "PONG" " " msg))
     (serialize "PONG")))
 
@@ -165,21 +163,11 @@
     (serialize (count (get (get new-store key) :val [])))
     (str "-Error nothing to push" delim)))
 
-(defn command-output-unknown []
-  (serialize "OK"))
+(defn output-command-not-found []
+  (serialize {:error "Error command not found"}))
 
-(defn command-store-unknown [_ _ store]
-  store)
+(defn store-handler-factory [command]
+  (ns-resolve 'data-store.handler (symbol (str "command-store-" (lower-case command)))))
 
-(defn output-handler [command & args]
-  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-output-" command)))]
-    (apply dispatch-handler args)
-    (command-output-unknown)))
-
-(defn store-handler-strategy [[command & args] time store]
-    (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-store-" command)))]
-     (dispatch-handler args time store)
-     (command-store-unknown args time store)))
-
-(defn output-handler-strategy [input time old-store new-store]
-  (output-handler (lower-case (first input)) (rest input) time old-store new-store))
+(defn output-handler-factory [command]
+  (ns-resolve 'data-store.handler (symbol (str "command-output-" (lower-case command)))))

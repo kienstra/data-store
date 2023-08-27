@@ -34,7 +34,7 @@
    (.writeAndFlush channel Unpooled/EMPTY_BUFFER)
    (.addListener ChannelFutureListener/CLOSE)))
 
-(defn server-handler [output-handler store-handler]
+(defn server-handler [get-output-factory update-store-factory]
   (proxy [SimpleChannelInboundHandler] []
     (channelActive [ctx]
       (.. ctx channel read))
@@ -50,15 +50,18 @@
       (let [input (take-nth
                    2
                    (rest
-                    (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))]
-        (if store-handler
+                    (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))
+            [command & args] input
+            update-store (update-store-factory command)
+            get-output (get-output-factory command)]
+        (if update-store
           (let [[old-store new-store] (swap-vals! store (fn [prev-store]
-                                                          (store-handler
-                                                           input
+                                                          (update-store
+                                                           args
                                                            (System/currentTimeMillis)
                                                            prev-store)))]
-            (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler input (System/currentTimeMillis) old-store new-store)))))
-          (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler input (System/currentTimeMillis) @store)))))))
+            (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (get-output args (System/currentTimeMillis) old-store new-store)))))
+          (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (get-output args (System/currentTimeMillis) @store nil)))))))
     (exceptionCaught
       [ctx e])))
 
@@ -68,7 +71,7 @@
         channel (.. bootstrap (bind port) (sync) (channel))]
     channel))
 
-(defn serve! [port output-handler store-handler]
+(defn serve! [port get-output update-store]
   (start-server
    port
-   (fn [] [(server-handler output-handler store-handler)])))
+   (fn [] [(server-handler get-output update-store)])))
