@@ -13,7 +13,8 @@
   :profiles {:uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
              :dev {:aot :all
-                   :jvm-opts ["-Djdk.attach.allowAttachSelf"
+                   :jvm-opts ["-Dio.netty.leakDetectionLevel=advanced"
+                              "-Djdk.attach.allowAttachSelf"
                               "-XX:+UnlockDiagnosticVMOptions"
                               "-XX:+DebugNonSafepoints"]
                    :plugins [[lein-cljfmt "0.9.2"]]}})
