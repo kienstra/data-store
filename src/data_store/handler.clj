@@ -112,6 +112,4 @@
     (apply command-unknown args)))
 
 (defn handler [store input time]
-  (if-let [command (lower-case (first input))]
-    (command-handler command (rest input) store time)
-    [store (str "-Error no command" delim)]))
+  (command-handler (lower-case (first input)) (rest input) store time))
