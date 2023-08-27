@@ -4,7 +4,7 @@
 
 (def delim "\r\n")
 
-(defn command-store-get [input store time]
+(defn command-store-get [input time store]
   (let [store-key (first input)]
     (cond
       (not store-key)
@@ -20,7 +20,7 @@
                 (dissoc store store-key)
                 store)))))
 
-(defn command-output-get [input store time]
+(defn command-output-get [input time store _]
   (let [store-key (first input)]
     (cond
       (not store-key)
@@ -36,7 +36,7 @@
                 (serialize nil)
                 (serialize (:val (get store store-key))))))))
 
-(defn command-store-set [input store time]
+(defn command-store-set [input time store]
   (let [k (first input)
         v (second input)]
     (cond
@@ -57,7 +57,7 @@
                 (into store {k {:val v :exp (Integer/parseInt sub-command-arg)}})
                 :else (into store {k {:val v}}))))))
 
-(defn command-output-set [input _ _]
+(defn command-output-set [input _ _ _]
   (let [k (first input)
         v (second input)]
     (cond
@@ -67,28 +67,37 @@
       (str "-Error not a string" delim)
       :else (serialize "OK"))))
 
-(defn command-expire [input store time]
+(defn command-store-expire [input time store]
   (let [store-key (first input)
         exp-time (second input)]
     (if (and
          store-key
          exp-time
          (contains? store store-key))
-      [(into store {store-key (into (get store store-key) {:exp (+ time (* 1000 (Integer/parseInt exp-time)))})})
-       (serialize 1)]
-      [store (serialize 0)])))
+      (into store {store-key (into (get store store-key) {:exp (+ time (* 1000 (Integer/parseInt exp-time)))})})
+      store)))
 
-(defn command-echo [input store _]
+(defn command-output-expire [input _ old-store _]
+  (let [store-key (first input)
+        exp-time (second input)]
+    (if (and
+         store-key
+         exp-time
+         (contains? old-store store-key))
+      (serialize 1)
+      (serialize 0))))
+
+(defn command-output-echo [input _ _ _]
   (if-let [msg (first input)]
-    [store (serialize msg)]
-    [store (str "-Error nothing to echo" delim)]))
+    (serialize msg)
+    (str "-Error nothing to echo" delim)))
 
-(defn command-ping [input store _]
+(defn command-output-ping [input _ _ _]
   (if-let [msg (first input)]
-    [store (serialize (str "PONG" " " msg))]
-    [store (serialize "PONG")]))
+    (serialize (str "PONG" " " msg))
+    (serialize "PONG")))
 
-(defn command-exists [[& keys] store _]
+(defn command-output-exists [[& keys] _ store _]
   (if
    (first keys)
     [store (join (map
@@ -96,57 +105,81 @@
                   keys))]
     [store (str "-Error nothing to check" delim)]))
 
-(defn command-delete [[& keys] store _]
+(defn command-store-delete [[& keys] _ store]
   (if
    (first keys)
     (let [existing-keys (filter #(contains? store %) keys)]
-      [(apply dissoc store existing-keys) (serialize (count existing-keys))])
-    [store (str "-Error nothing to delete" delim)]))
+      (apply dissoc store existing-keys))
+    store))
 
-(defn command-incr [[key] store _]
+(defn command-output-delete [[& keys] _ old-store _]
+  (if
+   (first keys)
+    (let [existing-keys (filter #(contains? old-store %) keys)]
+      (serialize (count existing-keys)))
+    (str "-Error nothing to delete" delim)))
+
+(defn command-store-incr [[key] _ store]
   (if key
     (let [new-val (inc (Integer. (get (get store key) :val 0)))]
-      [(into store {key (into (get store key {}) {:val (str new-val)})}) (serialize new-val)])
-    [store (str "-Error nothing to increment" delim)]))
+      (into store {key (into (get store key {}) {:val (str new-val)})}))
+    store))
 
-(defn command-decr [[key] store _]
+(defn command-output-incr [[key] _ _ new-store]
+  (if key
+    (serialize (Integer. (get (get new-store key) :val 0)))
+    (str "-Error nothing to increment" delim)))
+
+(defn command-store-decr [[key] _ store]
   (if key
     (let [new-val (dec (Integer. (get (get store key) :val 0)))]
-      [(into store {key (into (get store key {}) {:val (str new-val)})}) (serialize new-val)])
-    [store (str "-Error nothing to decrement" delim)]))
+      (into store {key (into (get store key {}) {:val (str new-val)})}))
+    store))
 
-(defn command-lpush [[key & vals] store _]
+(defn command-output-decr [[key] _ _ new-store]
+  (if key
+    (serialize (Integer. (get (get new-store key) :val 0)))
+    (str "-Error nothing to decrement" delim)))
+
+(defn command-store-lpush [[key & vals] _ store]
   (if key
     (let [prev-val (get (get store key) :val [])
           new-val (vec (apply conj (reverse vals) prev-val))]
-      [(into store {key (into (get store key {}) {:val new-val})}) (serialize (count new-val))])
-    [store (str "-Error nothing to push" delim)]))
+      (into store {key (into (get store key {}) {:val new-val})}))
+    store))
 
-(defn command-rpush [[key & vals] store _]
+(defn command-output-lpush [[key] _ _ new-store]
+  (if key
+    (serialize (count (get (get new-store key) :val [])))
+    (str "-Error nothing to push" delim)))
+
+(defn command-store-rpush [[key & vals] _ store]
   (if key
     (let [prev-val (get (get store key) :val [])
           new-val (vec (apply conj vals prev-val))]
-      [(into store {key (into (get store key {}) {:val new-val})}) (serialize (count new-val))])
-    [store (str "-Error nothing to push" delim)]))
+      (into store {key (into (get store key {}) {:val new-val})}))
+    store))
+
+(defn command-output-rpush [[key] _ _ new-store]
+  (if key
+    (serialize (count (get (get new-store key) :val [])))
+    (str "-Error nothing to push" delim)))
 
 (defn command-output-unknown []
   (serialize "OK"))
 
-(defn command-store-unknown [_ store _]
+(defn command-store-unknown [_ _ store]
   store)
-
-(defn store-handler [command & args]
-  (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-store-" command)))]
-    (apply dispatch-handler args)
-    (apply command-store-unknown args)))
-
-(defn store-handler-adapter [store input time]
-  (store-handler (lower-case (first input)) (rest input) store time))
 
 (defn output-handler [command & args]
   (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-output-" command)))]
     (apply dispatch-handler args)
     (command-output-unknown)))
 
-(defn output-handler-adapter [store input time]
-  (output-handler (lower-case (first input)) (rest input) store time))
+(defn store-handler-strategy [[command & args] time store]
+    (if-let [dispatch-handler (ns-resolve 'data-store.handler (symbol (str "command-store-" command)))]
+     (dispatch-handler args time store)
+     (command-store-unknown args time store)))
+
+(defn output-handler-strategy [input time old-store new-store]
+  (output-handler (lower-case (first input)) (rest input) time old-store new-store))

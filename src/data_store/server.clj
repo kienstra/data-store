@@ -54,11 +54,11 @@
         (if store-handler
           (let [[old-store new-store] (swap-vals! store (fn [prev-store]
                                                           (store-handler
-                                                           prev-store
                                                            input
-                                                           (System/currentTimeMillis))))]
-            (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler new-store input (System/currentTimeMillis))))))
-          (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler @store input (System/currentTimeMillis))))))))
+                                                           (System/currentTimeMillis)
+                                                           prev-store)))]
+            (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler input (System/currentTimeMillis) old-store new-store)))))
+          (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler input (System/currentTimeMillis) @store)))))))
     (exceptionCaught
       [ctx e])))
 
