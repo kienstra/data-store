@@ -32,7 +32,7 @@
     (channelRead0 [ctx msg]
       (let [input (take-nth
                    2
-                   (drop 2 (split (.toString msg (.. StandardCharsets UTF_8 )) #"\r\n")))
+                   (drop 2 (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n")))
             [old-store new-store] (swap-vals! store (fn [prev-store]
                                                       (store-handler
                                                        input
