@@ -41,24 +41,16 @@
     (channelInactive [ctx]
       (flush-and-close (.. ctx channel)))
     (channelRead0 [ctx msg]
-      ; store-handler
-      ; output-handler
-      ; If there's a store-handler, run swap-values! with that
-      ; Run output-handler on the new-store and previous-store
-      ; There should always be an output handler
-      ; So the swap-values! function should be pure
       (let [input (take-nth
                    2
                    (rest
-                    (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))]
-        (if store-handler
-          (let [[old-store new-store] (swap-vals! store (fn [prev-store]
-                                                          (store-handler
-                                                           input
-                                                           (System/currentTimeMillis)
-                                                           prev-store)))]
-            (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler input (System/currentTimeMillis) old-store new-store)))))
-          (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler input (System/currentTimeMillis) @store)))))))
+                    (rest (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n"))))
+            [old-store new-store] (swap-vals! store (fn [prev-store]
+                                                      (store-handler
+                                                       input
+                                                       (System/currentTimeMillis)
+                                                       prev-store)))]
+            (.writeAndFlush (.. ctx channel) (Unpooled/wrappedBuffer (.getBytes (output-handler input (System/currentTimeMillis) old-store new-store))))))
     (exceptionCaught
       [ctx e])))
 
