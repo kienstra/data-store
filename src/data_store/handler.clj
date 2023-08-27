@@ -3,7 +3,7 @@
             [data-store.frame :refer [delim serialize]]))
 
 (defn command-store-get [input time store]
-  (let [store-key (first input)]
+  (let [store-key (nth input 0)]
     (cond
       (not store-key)
       store
@@ -19,7 +19,7 @@
                 store)))))
 
 (defn command-output-get [input time store _]
-  (let [store-key (first input)]
+  (let [store-key (nth input 0)]
     (cond
       (not store-key)
       (str "-Error nothing to get" delim)
@@ -35,7 +35,7 @@
                 (serialize (:val (get store store-key))))))))
 
 (defn command-store-set [input time store]
-  (let [k (first input)
+  (let [k (nth input 0)
         v (second input)]
     (cond
       (or (not k) (not v))
@@ -56,7 +56,7 @@
                 :else (into store {k {:val v}}))))))
 
 (defn command-output-set [input _ _ _]
-  (let [k (first input)
+  (let [k (nth input 0)
         v (second input)]
     (cond
       (or (not k) (not v))
@@ -66,7 +66,7 @@
       :else (serialize "OK"))))
 
 (defn command-store-expire [input time store]
-  (let [store-key (first input)
+  (let [store-key (nth input 0)
         exp-time (second input)]
     (if (and
          store-key
@@ -76,7 +76,7 @@
       store)))
 
 (defn command-output-expire [input _ old-store _]
-  (let [store-key (first input)
+  (let [store-key (nth input 0)
         exp-time (second input)]
     (if (and
          store-key
@@ -86,18 +86,18 @@
       (serialize 0))))
 
 (defn command-output-echo [input _ _ _]
-  (if-let [msg (first input)]
+  (if-let [msg (nth input 0)]
     (serialize msg)
     (str "-Error nothing to echo" delim)))
 
 (defn command-output-ping [input _ _ _]
-  (if-let [msg (first input)]
+  (if-let [msg (nth input 0)]
     (serialize (str "PONG" " " msg))
     (serialize "PONG")))
 
 (defn command-output-exists [[& keys] _ store _]
   (if
-   (first keys)
+   (nth keys 0)
     [store (join (map
                   #(serialize (if (contains? store %) 1 0))
                   keys))]
@@ -105,14 +105,14 @@
 
 (defn command-store-delete [[& keys] _ store]
   (if
-   (first keys)
+   (nth keys 0)
     (let [existing-keys (filter #(contains? store %) keys)]
       (apply dissoc store existing-keys))
     store))
 
 (defn command-output-delete [[& keys] _ old-store _]
   (if
-   (first keys)
+   (nth keys 0)
     (let [existing-keys (filter #(contains? old-store %) keys)]
       (serialize (count existing-keys)))
     (str "-Error nothing to delete" delim)))
