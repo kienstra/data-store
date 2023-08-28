@@ -46,30 +46,35 @@
                 (serialize nil)
                 (serialize (:val (get store store-key))))))))
 
+(defn update-with-exp [k v input store time]
+  (let [sub-command (nth input 2 nil)
+        sub-command-arg (nth input 3 nil)
+        new-exp
+        (cond
+          (not sub-command-arg)
+          nil
+          (= sub-command "EX")
+          (+ time (* 1000 (Integer/parseInt sub-command-arg)))
+          (= sub-command "PEX")
+          (+ time (Integer/parseInt sub-command-arg))
+          (= sub-command "EXAT")
+          (* 1000 (Integer/parseInt sub-command-arg))
+          (= sub-command "PXAT")
+          (Integer/parseInt sub-command-arg))]
+    (if new-exp
+      (into store {k {:val v :exp new-exp}})
+      (into store {k {:val v}}))))
+
 (defmethod update-store :set [_ input time store]
   (let [k (nth input 0)
-        v (second input)]
-    (cond
-      (or (not k) (not v))
-      store
-      (not (string? v))
-      store
-      :else (let [sub-command (nth input 2 nil)
-                  sub-command-arg (nth input 3 nil)]
-              (cond
-                (and (= sub-command "EX") sub-command-arg)
-                (into store {k {:val v :exp (+ time (* 1000 (Integer/parseInt sub-command-arg)))}})
-                (and (= sub-command "PEX") sub-command-arg)
-                (into store {k {:val v :exp (+ time (Integer/parseInt sub-command-arg))}})
-                (and (= sub-command "EXAT") sub-command-arg)
-                (into store {k {:val v :exp (* 1000 (Integer/parseInt sub-command-arg))}})
-                (and (= sub-command "PXAT") sub-command-arg)
-                (into store {k {:val v :exp (Integer/parseInt sub-command-arg)}})
-                :else (into store {k {:val v}}))))))
+        v (nth input 1)]
+    (if (and k (string? v))
+      (update-with-exp k v input store time)
+      store)))
 
 (defmethod output :set [_ input _ _ _]
   (let [k (nth input 0)
-        v (second input)]
+        v (nth input 1)]
     (cond
       (or (not k) (not v))
       (serialize {:error "Error nothing to set"})
