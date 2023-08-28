@@ -16,10 +16,10 @@ The store will be a simple [hash map](https://clojure.org/reference/data_structu
 {"Name" {:val "John" :exp 100100}}
 ```
 
-…not a [protocol](https://clojure.org/reference/protocols).
+…not [deftype or defrecord](https://clojure.org/reference/datatypes).
 
 ## Consequences
-1. The [hash map](https://clojure.org/reference/data_structures#Maps) should perform better than wrapping a map in a [protocol](https://clojure.org/reference/protocols).
+1. The [hash map](https://clojure.org/reference/data_structures#Maps) should perform better than wrapping a map in a [deftype or defrecord](https://clojure.org/reference/datatypes).
 1. The shape of the hash map becomes important. For example, with `{"Name" {:val "John"}}`, functions will need to know that the value is at `:val`. If it were wrapped in a [protocol](https://clojure.org/reference/protocols), it could have getters and setters that would hide that detail.
 1. It will be harder to change the shape of the hash map.
 1. If this repo grows, [deftype and defrecord](https://clojure.org/reference/datatypes) might give better abstraction to the store, while performing well enough.
