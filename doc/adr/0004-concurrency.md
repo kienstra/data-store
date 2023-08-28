@@ -8,13 +8,13 @@ Accepted
 How will this allow multiple concurrent clients?
 
 ## Decision
-This will use [Netty](https://netty.io/4.1/api/index.html), a Java network framework that uses threads.
+This will use [Netty](https://netty.io/4.1/api/index.html), a Java networking framework that uses threads.
 
-I tried and failed usto use [core.async](https://clojure.github.io/core.async/) from [0003-concurrency](0003-concurrency.md).
+I tried and failed to use [core.async](https://clojure.github.io/core.async/) from [0003-concurrency](0003-concurrency.md).
 
 The [CLI](https://docs.redis.com/latest/rs/references/cli-utilities/redis-cli/) hung in interactive mode.
 
 ## Consequences
 1. This will be easier than writing a custom server. [Netty](https://netty.io/4.1/api/index.html) handles low-level details of networking.
 2. Other developers should understand this, as Netty is common in Clojure and Java.
-3. Configuring [Netty](https://netty.io/4.1/api/index.html) can be hard, and require low-level knowledge.
+3. Configuring [Netty](https://netty.io/4.1/api/index.html) can be hard, and require low-level knowledge. Still, writing a custom TCP server would be much harder, and it's not clear it would perform better.
