@@ -8,6 +8,12 @@
 (defmulti output (fn [command & _]
                    command))
 
+(defn update-store-strategy [[command & args] time store]
+  (update-store (keyword (lower-case command)) args time store))
+
+(defn output-strategy [[command & args] time old-store new-store]
+  (output (keyword (lower-case command)) args time old-store new-store))
+
 (defmethod update-store :get [_ input time store]
   (let [store-key (nth input 0)]
     (cond
@@ -178,9 +184,3 @@
 
 (defmethod update-store :default [_ _ _ store]
   store)
-
-(defn update-store-strategy [[command & args] time store]
-  (update-store (keyword (lower-case command)) args time store))
-
-(defn output-strategy [[command & args] time old-store new-store]
-  (output (keyword (lower-case command)) args time old-store new-store))
