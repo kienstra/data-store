@@ -1,7 +1,7 @@
 (ns data-store.expiration
   (:require [clojure.set :refer [union]]))
 
-(defn expired [store time]
+(defn expired [time store]
   (reduce
    (fn [acc [k v]]
      (if (and (:exp v) (>= time (:exp v)))
@@ -21,11 +21,18 @@
 
 (defn expire-n [store time n]
   (let [keys-expired
-        (loop [iter-keys-expired (expired (take n (has-exp store)) time)]
+        (loop [iter-keys-expired (->> store
+                                      has-exp
+                                      (take n)
+                                      (expired time))]
           (if
            (or (<= (count iter-keys-expired) (* 0.25 n)) (= (count iter-keys-expired) (count store)))
             iter-keys-expired
             (recur (union
                     iter-keys-expired
-                    (expired (take n (has-exp (apply dissoc store iter-keys-expired))) time)))))]
+                    (->> iter-keys-expired
+                         (apply dissoc store)
+                         has-exp
+                         (take n)
+                         (expired time))))))]
     (apply dissoc store keys-expired)))

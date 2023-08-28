@@ -48,7 +48,7 @@
 
 (defmethod update-store :set [_ input time store]
   (let [k (nth input 0)
-        v (nth input 1)]
+        v (second input)]
     (cond
       (or (not k) (not v))
       store
@@ -69,7 +69,7 @@
 
 (defmethod output :set [_ input _ _ _]
   (let [k (nth input 0)
-        v (nth input 1)]
+        v (second input)]
     (cond
       (or (not k) (not v))
       (serialize {:error "Error nothing to set"})
@@ -89,7 +89,7 @@
 
 (defmethod output :expire [_ input _ old-store _]
   (let [store-key (nth input 0)
-        exp-time (nth input 1)]
+        exp-time (nth input 1 nil)]
     (if (and
          store-key
          exp-time
@@ -104,7 +104,7 @@
 
 (defmethod output :ping [_ input _ _ _]
   (if-let [msg (nth input 0)]
-    (serialize (str "PONG " msg))
+    (serialize (str "PONG" " " msg))
     (serialize "PONG")))
 
 (defmethod output :exists [_ [& keys] _ store _]

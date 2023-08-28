@@ -25,7 +25,8 @@
                  (pipeline)
                  (addLast (into-array ChannelHandler handlers)))))))
       (childOption ChannelOption/AUTO_READ true)
-      (childOption ChannelOption/AUTO_CLOSE true)))
+      (childOption ChannelOption/AUTO_CLOSE true)
+      (childOption ChannelOption/TCP_NODELAY true)))
 
 (defn server-handler [get-output update-store]
   (proxy [SimpleChannelInboundHandler] []
