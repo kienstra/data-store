@@ -1,8 +1,8 @@
-# 1. Concurrency
+# 3. Concurrency
 Date: 2023-08-17
 
 ## Status
-Proposed
+Superseded by [0004-concurrency](doc/adr/0004-concurrency.md)
 
 ## Context
 How will this allow multiple concurrent clients?

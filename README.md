@@ -30,7 +30,7 @@ Similar to Redis®* but fewer features.
 
 Please open an [issue](https://github.com/kienstra/data-store/issues) on GitHub.
 
-## License
+### License
 
 [GPLv2](LICENSE) or later
 

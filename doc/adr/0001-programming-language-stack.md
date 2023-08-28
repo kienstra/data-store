@@ -2,7 +2,7 @@
 Date: 2023-08-06
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 What programming language should this data store be in? It should have good support for network programming and Test Driven Development.
