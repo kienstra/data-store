@@ -10,7 +10,8 @@
    [io.netty.buffer Unpooled]
    [java.nio.charset StandardCharsets])
   (:require [clojure.string :refer [split]]
-            [data-store.store :refer [store]]))
+            [data-store.store :refer [store]]
+            [data-store.handler :refer [output-strategy update-store-strategy]]))
 
 (defn init-server-bootstrap
   [group handlers-factory]
@@ -27,20 +28,20 @@
       (childOption ChannelOption/AUTO_READ true)
       (childOption ChannelOption/AUTO_CLOSE true)))
 
-(defn server-handler [get-output update-store]
+(defn server-handler []
   (proxy [SimpleChannelInboundHandler] []
     (channelRead0 [ctx msg]
       (let [input (take-nth
                    2
                    (drop 2 (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n")))
             [old-store new-store] (swap-vals! store (fn [prev-store]
-                                                      (update-store
+                                                      (update-store-strategy
                                                        input
                                                        (System/currentTimeMillis)
                                                        prev-store)))]
         (.writeAndFlush
          (.. ctx channel)
-         (Unpooled/wrappedBuffer (.getBytes (get-output
+         (Unpooled/wrappedBuffer (.getBytes (output-strategy
                                              input
                                              (System/currentTimeMillis)
                                              old-store
@@ -54,7 +55,7 @@
         channel (.. bootstrap (bind port) (sync) (channel))]
     channel))
 
-(defn serve! [port get-output update-store]
+(defn serve! [port]
   (start-server
    port
-   (fn [] [(server-handler get-output update-store)])))
+   (fn [] [(server-handler)])))
