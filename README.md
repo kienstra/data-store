@@ -45,7 +45,7 @@ GET: 74833.49 requests per second, p50=0.351 msec
 SET: 80729.80 requests per second, p50=0.303 msec
 GET: 81512.88 requests per second, p50=0.319 msec
 ```
-9. This gives a comparison of how this server compares to Redis®.
+9. That's how this server compares to Redis®.
 
 ### Bugs
 
