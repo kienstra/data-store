@@ -16,5 +16,5 @@ The [CLI](https://docs.redis.com/latest/rs/references/cli-utilities/redis-cli/) 
 
 ## Consequences
 1. This will be easier than writing a custom server. [Netty](https://netty.io/4.1/api/index.html) handles low-level details of networking.
-2. Other developers should understand this, as Netty is common in Clojure and Java.
-3. Configuring [Netty](https://netty.io/4.1/api/index.html) can be hard, and require low-level knowledge. Still, writing a custom TCP server would be much harder, and it's not clear it would perform better.
+1. Other developers should understand this, as Netty is common in Clojure and Java.
+1. Configuring [Netty](https://netty.io/4.1/api/index.html) can be hard, and require low-level knowledge. Still, writing a custom TCP server would be much harder, and it's not clear it would perform better.
