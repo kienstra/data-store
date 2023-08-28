@@ -23,7 +23,9 @@
     (is (= [["foo" "bar"] 22]  (unserialize "*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n")))
     (is (= [[1 2 3] 16] (unserialize "*3\r\n:1\r\n:2\r\n:3\r\n")))
     (is (= [[[1 2 3] 2 3] 28] (unserialize "*3\r\n*3\r\n:1\r\n:2\r\n:3\r\n:2\r\n:3\r\n")))
-    (is (= [[[1 2 [1 2 3]] 2 3] 40] (unserialize "*3\r\n*3\r\n:1\r\n:2\r\n*3\r\n:1\r\n:2\r\n:3\r\n:2\r\n:3\r\n")))))
+    (is (= [[[1 2 [1 2 3]] 2 3] 40] (unserialize "*3\r\n*3\r\n:1\r\n:2\r\n*3\r\n:1\r\n:2\r\n:3\r\n:2\r\n:3\r\n")))
+    (testing "Invalid"
+      (is (= {:error "Could not unserialize"} (unserialize "#1something"))))))
 
 (deftest frame-test-serialize
   (testing "Simple string"

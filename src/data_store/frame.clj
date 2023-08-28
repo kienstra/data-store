@@ -1,12 +1,37 @@
 (ns data-store.frame
   (:require [clojure.string :refer [join]]))
 
+(declare unserialize)
 (defn buffer->count [b i]
   (if (Character/isDigit (get b i))
     (recur b (inc i))
     (Integer/parseInt (subs b 0 i))))
 
 (def delim "\r\n")
+
+(defn- unserialize-bulk-string [b first-char]
+  (let [bytes (buffer->count (subs b 1) 0)
+        begin-index (+ (count first-char) (count (str bytes)) (count delim))
+        end-index (+ begin-index bytes)
+        expected-length (+ end-index (count delim))
+        ends-in-delim (and (>= (count b) expected-length) (= delim (subs b end-index expected-length)))]
+    (if ends-in-delim
+      [(subs b begin-index end-index) (+ end-index (count delim))]
+      [{:error "Does not end in the delimiter"} 0])))
+
+(defn- unserialize-array [b first-char]
+  (let [n-elements (buffer->count (subs b 1) 0)
+        begin-index (+ (count first-char) (count (str n-elements)) (count delim))]
+    (if (= begin-index (count b))
+      [[] begin-index]
+      (let [rest-to-parse (subs b begin-index)
+            initial (unserialize rest-to-parse)]
+        (loop [[parsed i] [(vector (nth initial 0)) (nth initial 1)]]
+          (if (= (count parsed) n-elements)
+            [parsed (+ i begin-index)]
+            (let [[new-parsed new-i] (unserialize (subs rest-to-parse i))]
+              (recur [(conj parsed new-parsed) (+ i new-i)]))))))))
+
 (defn unserialize [b]
   (let [first-char (subs b 0 1)
         delim-index (.indexOf b delim)
@@ -21,26 +46,10 @@
       (= first-char ":")
       [(Integer/parseInt (subs b 1 (if (= delim-index -1) (count b) delim-index))) after-delim-index]
       (= first-char "$")
-      (let [bytes (buffer->count (subs b 1) 0)
-            begin-index (+ (count first-char) (count (str bytes)) (count delim))
-            end-index (+ begin-index bytes)
-            expected-length (+ end-index (count delim))
-            ends-in-delim (and (>= (count b) expected-length) (= delim (subs b end-index (+ end-index (count delim)))))]
-        (if ends-in-delim
-          [(subs b begin-index end-index) (+ end-index (count delim))]
-          [{:error "Does not end in the delimiter"} 0]))
+      (unserialize-bulk-string b first-char)
       (= first-char "*")
-      (let [number-elements (buffer->count (subs b 1) 0)
-            begin-index (+ (count first-char) (count (str number-elements)) (count delim))]
-        (if (= begin-index (count b))
-          [[] begin-index]
-          (let [rest-to-parse (subs b begin-index)
-                initial (unserialize rest-to-parse)]
-            (loop [[parsed i] [(vector (first initial)) (second initial)]]
-              (if (= (count parsed) number-elements)
-                [parsed (+ i begin-index)]
-                (let [[new-parsed new-i] (unserialize (subs rest-to-parse i))]
-                  (recur [(conj parsed new-parsed) (+ i new-i)]))))))))))
+      (unserialize-array b first-char)
+      :else {:error "Could not unserialize"})))
 
 (defn serialize [x]
   (cond
