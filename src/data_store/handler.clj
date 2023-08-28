@@ -104,7 +104,7 @@
 
 (defmethod output :ping [_ input _ _ _]
   (if-let [msg (nth input 0)]
-    (serialize (str "PONG" " " msg))
+    (serialize (str "PONG " msg))
     (serialize "PONG")))
 
 (defmethod output :exists [_ [& keys] _ store _]
