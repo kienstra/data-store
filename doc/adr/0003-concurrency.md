@@ -2,7 +2,7 @@
 Date: 2023-08-17
 
 ## Status
-Superseded by [0004-concurrency](doc/adr/0004-concurrency.md)
+Superseded by [0004-concurrency](0004-concurrency.md)
 
 ## Context
 How will this allow multiple concurrent clients?

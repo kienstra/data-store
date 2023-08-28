@@ -10,7 +10,7 @@ How will this allow multiple concurrent clients?
 ## Decision
 This will use [Netty](https://netty.io/4.1/api/index.html), a Java network framework that uses threads.
 
-I tried and failed usto use [core.async](https://clojure.github.io/core.async/) from [0003-concurrency](doc/adr/0003-concurrency.md).
+I tried and failed usto use [core.async](https://clojure.github.io/core.async/) from [0003-concurrency](0003-concurrency.md).
 
 The [CLI](https://docs.redis.com/latest/rs/references/cli-utilities/redis-cli/) hung in interactive mode.
 
