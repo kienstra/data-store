@@ -29,23 +29,23 @@ Similar to Redis®* but fewer features.
 ### Benchmark server
 
 1. [Run server](#run-server-in-production)
-1. Open a new terminal tab
-1. `redis-benchmark -t set,get, -n 1000000 -q`
-1. Expected:
+2. Open a new terminal tab
+3. `redis-benchmark -t set,get, -n 1000000 -q`
+4. Expected:
 ```sh
 WARNING: Could not fetch server CONFIG
 SET: 72270.00 requests per second, p50=0.343 msec
 GET: 74833.49 requests per second, p50=0.351 msec
 ```
-1. Stop the server you ran in step 1 with Control-C.
-1. `redis-server`
-1. Repeat step 3
-1. Expected:
+5. Stop the server you ran in step 1 with Control-C.
+6. `redis-server`
+7. Repeat step 3
+8. Expected:
 ```sh
 SET: 80729.80 requests per second, p50=0.303 msec
 GET: 81512.88 requests per second, p50=0.319 msec
 ```
-1. This gives a comparison of how this server compares to Redis®.
+9. This gives a comparison of how this server compares to Redis®.
 
 ### Bugs
 
