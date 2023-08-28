@@ -26,6 +26,18 @@ Similar to Redis®* but fewer features.
 
 `java -jar target/uberjar/data-store-<version>-standalone.jar`
 
+### Benchmark server
+
+1. [Run server](#run-server-in-production)
+1. `redis-benchmark -t set,get, -n 1000000 -q`
+1. Expected:
+
+```sh
+WARNING: Could not fetch server CONFIG
+SET: 72270.00 requests per second, p50=0.343 msec
+GET: 74833.49 requests per second, p50=0.351 msec
+```
+
 ### Bugs
 
 Please open an [issue](https://github.com/kienstra/data-store/issues) on GitHub.
