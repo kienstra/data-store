@@ -2,6 +2,8 @@
 
 A lightweight in-memory data store in [Clojure](https://clojure.org/).
 
+Similar to Redis®* but fewer features.
+
 ### Run server locally
 
 1. [Install Leiningen](https://leiningen.org/) if you haven't already
@@ -31,3 +33,5 @@ Please open an [issue](https://github.com/kienstra/data-store/issues) on GitHub.
 ## License
 
 [GPLv2](LICENSE) or later
+
+* Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to Redis Ltd. Any use by this repo is for referential purposes only and does not indicate any sponsorship, endorsement or affiliation between Redis and this repo.
