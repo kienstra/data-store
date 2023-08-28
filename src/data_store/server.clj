@@ -1,46 +1,61 @@
-; Props Artem Yankov for most of this file
-; https://github.com/yankov/memobot/blob/9498f02d1f32c3133c67581f31e959557e05048f/src/memobot/core.clj
+; Props Techniek for most of this file
+; https://infi.nl/nieuws/writing-a-tcp-proxy-using-netty-and-clojure/
 (ns data-store.server
   (:import
-   [java.net InetSocketAddress]
-   [java.util.concurrent Executors]
-   [org.jboss.netty.bootstrap ServerBootstrap]
-   [org.jboss.netty.channel SimpleChannelHandler]
-   [org.jboss.netty.channel.socket.nio NioServerSocketChannelFactory]
-   [org.jboss.netty.buffer ChannelBuffers])
+   [io.netty.bootstrap ServerBootstrap]
+   [io.netty.channel.socket.nio NioServerSocketChannel]
+   [io.netty.channel SimpleChannelInboundHandler
+    ChannelInitializer ChannelOption ChannelHandler]
+   [io.netty.channel.nio NioEventLoopGroup]
+   [io.netty.buffer Unpooled]
+   [java.nio.charset StandardCharsets])
   (:require [clojure.string :refer [split]]
             [data-store.store :refer [store]]))
 
-(declare make-handler)
-(defn serve!
-  [port handler]
-  (let [channel-factory (NioServerSocketChannelFactory.
-                         (Executors/newCachedThreadPool)
-                         (Executors/newCachedThreadPool))
-        bootstrap (ServerBootstrap. channel-factory)
-        pipeline (.getPipeline bootstrap)]
-    (.addLast pipeline "handler" (make-handler handler))
-    (.setOption bootstrap "child.tcpNoDelay", true)
-    (.setOption bootstrap "child.keepAlive", true)
-    (.bind bootstrap (InetSocketAddress. port))
-    pipeline))
+(defn init-server-bootstrap
+  [group handlers-factory]
+  (.. (ServerBootstrap.)
+      (group group)
+      (channel NioServerSocketChannel)
+      (childHandler
+       (proxy [ChannelInitializer] []
+         (initChannel [channel]
+           (let [handlers (handlers-factory)]
+             (.. channel
+                 (pipeline)
+                 (addLast (into-array ChannelHandler handlers)))))))
+      (childOption ChannelOption/AUTO_READ true)
+      (childOption ChannelOption/AUTO_CLOSE true)
+      (childOption ChannelOption/TCP_NODELAY true)))
 
-(defn make-handler [handler]
-  (proxy [SimpleChannelHandler] []
-    (messageReceived [ctx e]
-      (let [c (.getChannel e)
-            cb (.getMessage e)
-            msg (.toString cb "UTF-8")]
-        (swap! store (fn [prev-store]
-                       (let [[new-store out] (handler
-                                              prev-store
-                                              (take-nth
-                                               2
-                                               (rest
-                                                (rest (split msg #"\r\n"))))
-                                              (System/currentTimeMillis))]
-                         (.write c (ChannelBuffers/wrappedBuffer (.getBytes out)))
-                         new-store)))))
+(defn server-handler [get-output update-store]
+  (proxy [SimpleChannelInboundHandler] []
+    (channelRead0 [ctx msg]
+      (let [input (take-nth
+                   2
+                   (drop 2 (split (.toString msg (.. StandardCharsets UTF_8)) #"\r\n")))
+            [old-store new-store] (swap-vals! store (fn [prev-store]
+                                                      (update-store
+                                                       input
+                                                       (System/currentTimeMillis)
+                                                       prev-store)))]
+        (.writeAndFlush
+         (.. ctx channel)
+         (Unpooled/wrappedBuffer (.getBytes (get-output
+                                             input
+                                             (System/currentTimeMillis)
+                                             old-store
+                                             new-store))))))
     (exceptionCaught
-      [ctx e]
-      (-> e .getChannel .close))))
+      [ctx e])))
+
+(defn start-server [port handlers-factory]
+  (let [event-loop-group (NioEventLoopGroup.)
+        bootstrap (init-server-bootstrap event-loop-group handlers-factory)
+        channel (.. bootstrap (bind port) (sync) (channel))]
+    channel))
+
+(defn serve! [port get-output update-store]
+  (start-server
+   port
+   (fn [] [(server-handler get-output update-store)])))
