@@ -16,19 +16,15 @@
 
 (defmethod update-store :get [_ input time store]
   (let [store-key (nth input 0)]
-    (cond
-      (not store-key)
-      store
-      (not (contains? store store-key))
-      store
-      (not (string? (:val (get store store-key))))
-      store
-      :else (let [exp (:exp (get store store-key))
-                  expired? (and exp (>= time exp))]
-              (if
-               expired?
-                (dissoc store store-key)
-                store)))))
+    (if
+     (and store-key (contains? store store-key) (string? (:val (get store store-key))))
+      (let [exp (:exp (get store store-key))
+            expired (and exp (>= time exp))]
+        (if
+         expired
+          (dissoc store store-key)
+          store))
+      store)))
 
 (defmethod output :get [_ input time store _]
   (let [store-key (nth input 0)]
