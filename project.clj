@@ -17,4 +17,5 @@
                               "-Djdk.attach.allowAttachSelf"
                               "-XX:+UnlockDiagnosticVMOptions"
                               "-XX:+DebugNonSafepoints"]
+                   :dependencies [[criterium "0.4.6"]]
                    :plugins [[lein-cljfmt "0.9.2"]]}})
