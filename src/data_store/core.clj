@@ -7,5 +7,5 @@
    [data-store.store :refer [dynamic-expiry!]]))
 
 (defn -main []
-  (serve! 6379)
+  (serve! 6379 output-strategy update-store-strategy)
   (dynamic-expiry! 100))
