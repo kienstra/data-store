@@ -5,7 +5,7 @@
 (deftest handler-test
   (testing "Invalid command"
     (is (= {} (update-store-strategy ["DOESNOTEXIST"] 0 {})))
-    (is (= "-Error unknown command: doesnotexist\r\n" (output-strategy ["DOESNOTEXIST"] 0 {} {}))))
+    (is (= "-Error unknown command: DOESNOTEXIST\r\n" (output-strategy ["DOESNOTEXIST"] 0 {} {}))))
   (testing "PING"
     (is (= {} (update-store-strategy ["PING"] 0 {})))
     (is (= "+PONG\r\n" (output-strategy ["PING"] 0 {} {}))))

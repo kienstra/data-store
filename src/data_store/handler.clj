@@ -3,16 +3,16 @@
             [data-store.frame :refer [serialize]]))
 
 (defmulti update-store (fn [command & _]
-                         command))
+                         (keyword (lower-case command))))
 
 (defmulti output (fn [command & _]
-                   command))
+                   (keyword (lower-case command))))
 
 (defn update-store-strategy [[command & args] time store]
-  (update-store (keyword (lower-case command)) args time store))
+  (update-store command args time store))
 
 (defn output-strategy [[command & args] time old-store new-store]
-  (output (keyword (lower-case command)) args time old-store new-store))
+  (output command args time old-store new-store))
 
 (defmethod update-store :get [_ input time store]
   (let [store-key (nth input 0)]
