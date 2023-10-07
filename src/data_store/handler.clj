@@ -2,20 +2,14 @@
   (:require [clojure.string :refer [lower-case]]
             [data-store.frame :refer [serialize]]))
 
-(defmulti update-store (fn [command & _]
+(defmulti update-store (fn [command _ _ _]
                          (lower-case command)))
 
-(defmulti output (fn [command & _]
+(defmulti output (fn [command _ _ _ _]
                    (lower-case command)))
 
-(defn update-store-strategy [[command & args] time store]
-  (update-store command args time store))
-
-(defn output-strategy [[command & args] time old-store new-store]
-  (output command args time old-store new-store))
-
 (defmethod update-store "get" [_ input time store]
-  (let [store-key (nth input 0)]
+  (let [store-key (nth input 0 nil)]
     (if
      (and store-key (contains? store store-key) (string? (:val (get store store-key))))
       (let [exp (:exp (get store store-key))
@@ -27,7 +21,7 @@
       store)))
 
 (defmethod output "get" [_ input time store _]
-  (let [store-key (nth input 0)]
+  (let [store-key (nth input 0 nil)]
     (cond
       (not store-key)
       (serialize {:error "Error nothing to get"})
@@ -62,15 +56,15 @@
       (into store {k {:val v}}))))
 
 (defmethod update-store "set" [_ input time store]
-  (let [k (nth input 0)
-        v (nth input 1)]
+  (let [k (nth input 0 nil)
+        v (nth input 1 nil)]
     (if (and k (string? v))
       (update-with-exp k v input store time)
       store)))
 
 (defmethod output "set" [_ input _ _ _]
-  (let [k (nth input 0)
-        v (nth input 1)]
+  (let [k (nth input 0 nil)
+        v (nth input 1 nil)]
     (cond
       (or (not k) (not v))
       (serialize {:error "Error nothing to set"})
@@ -79,8 +73,8 @@
       :else (serialize "OK"))))
 
 (defmethod update-store "expire" [_ input time store]
-  (let [store-key (nth input 0)
-        exp-time (nth input 1)]
+  (let [store-key (nth input 0 nil)
+        exp-time (nth input 1 nil)]
     (if (and
          store-key
          exp-time
@@ -89,7 +83,7 @@
       store)))
 
 (defmethod output "expire" [_ input _ old-store _]
-  (let [store-key (nth input 0)
+  (let [store-key (nth input 0 nil)
         exp-time (nth input 1 nil)]
     (if (and
          store-key
@@ -99,12 +93,12 @@
       (serialize 0))))
 
 (defmethod output "echo" [_ input _ _ _]
-  (if-let [msg (nth input 0)]
+  (if-let [msg (nth input 0 nil)]
     (serialize msg)
     (serialize {:error "Error nothing to echo"})))
 
 (defmethod output "ping" [_ input _ _ _]
-  (if-let [msg (nth input 0)]
+  (if-let [msg (nth input 0 nil)]
     (serialize (str "PONG" " " msg))
     (serialize "PONG")))
 
@@ -180,7 +174,7 @@
     (serialize (count (get (get new-store key) :val [])))
     (serialize {:error "Error nothing to push"})))
 
-(defmethod output :default [command _ _ _ _]
+(defmethod output :default [command & _]
   (serialize {:error (str "Error unknown command: " (name command))}))
 
 (defmethod update-store :default [_ _ _ store]
