@@ -62,7 +62,7 @@
       (update-with-exp k v input store time)
       store)))
 
-(defmethod output "set" [_ input _ _ _]
+(defmethod output "set" [_ input & _]
   (let [k (nth input 0 nil)
         v (nth input 1 nil)]
     (cond
@@ -92,12 +92,12 @@
       (serialize 1)
       (serialize 0))))
 
-(defmethod output "echo" [_ input _ _ _]
+(defmethod output "echo" [_ input & _]
   (if-let [msg (nth input 0 nil)]
     (serialize msg)
     (serialize {:error "Error nothing to echo"})))
 
-(defmethod output "ping" [_ input _ _ _]
+(defmethod output "ping" [_ input & _]
   (if-let [msg (nth input 0 nil)]
     (serialize (str "PONG" " " msg))
     (serialize "PONG")))
