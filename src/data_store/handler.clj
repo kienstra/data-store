@@ -2,10 +2,10 @@
   (:require [clojure.string :refer [lower-case]]
             [data-store.frame :refer [serialize]]))
 
-(defmulti update-store (fn [command _ _ _]
+(defmulti update-store (fn [command _input _time _store]
                          (lower-case command)))
 
-(defmulti output (fn [command _ _ _ _]
+(defmulti output (fn [command _input _time _old-store _new-store]
                    (lower-case command)))
 
 (defmethod update-store "get" [_ input time store]
